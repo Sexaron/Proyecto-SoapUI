@@ -289,7 +289,7 @@ class Lib_GettingData {
 
 		//Método que se usa en los filtros de MarketingCarrier y OperatingCarrier
 	def getValidOffers_Carriers(allOffers, flightSegmentsValid) {
-		logger.info ':: RUNNING -> ../getValidOffers_Carriers'
+		logger.info ':: RUNNING -> ../../getValidOffers_Carriers'
 
 		def isValid		= true
 		def segmentsRefs	= ''
@@ -420,7 +420,54 @@ class Lib_GettingData {
 		
 		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con operatingCarrier -> $oC"
 		return validOffers
-	}	
+	}
+
+
+		//Devuelve las ofertas según la propiedad 'flightNum'
+			//Se tiene en cuenta las escalas. 
+			//Solo comprueba que los números de vuelo dados estén dentro del trayecto pudiendo haber más números
+	def filter_flightNum( allOffers, fN, rs ){
+		logger.info ':: RUNNING -> ../filter_flightNum'
+		
+		def validOffers		= []
+		def segmentsRefs		= ''
+		def isValid			= true
+		def flightSegments		= []
+		def segmentsRef		= []
+		
+		if ( 'NO' == fN || 'RANDOM' == fN || '' == fN ) {
+			validOffers	= allOffers
+		} else {
+			fN	= fN.split(',')
+			fN.each() { num ->
+				flightSegments << rs.Body.AirShoppingRS.DataLists.FlightSegmentList.FlightSegment.find() {
+					it.MarketingCarrier.FlightNumber.toString().equals(num)
+				}.@SegmentKey.toString()
+				assert flightSegments != null, "ERROR: no hay segmento con número de vuelo $num"	
+			}
+
+			allOffers.each() { offer ->
+				segmentsRef	= []
+				isValid		= true
+				offer.OfferItem.FareDetail.FareComponent.each() {
+					segmentsRef << it.SegmentRefs
+				}				
+
+				flightSegments.each(){ flight ->
+					if ( !segmentsRef.toString().contains(flight.toString()) ) {
+						isValid = false
+					}
+				}
+				
+				if ( isValid ) { 
+					validOffers << offer 
+				}
+			}
+		}
+		
+		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con operatingCarrier -> $fN"
+		return validOffers
+	}
 	
 		//Devuelve una oferta de todas las disponibles según los criterios
 	def getOffer( 	numScales, priceClass, marketingCarrier,
@@ -438,7 +485,7 @@ class Lib_GettingData {
 		validOffers	= filter_priceClass( validOffers, priceClass, rs )
 		validOffers	= filter_marketingCarrier( validOffers, marketingCarrier, rs )
 		validOffers	= filter_operatingCarrier( validOffers, operatingCarrier, rs )
-		validOffers	= filter_operatingCarrier( validOffers, operatingCarrier, rs )
+		validOffers	= filter_flightNum( validOffers, flightNum, rs )
 
 		logger.info validOffers
 		logger.info validOffers.size()
