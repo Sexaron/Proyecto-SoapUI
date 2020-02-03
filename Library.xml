@@ -264,15 +264,20 @@ class Lib_SettingUpData {
 }
 
 final objName	= "cntx_SUD"
-context.setProperty( objName, new Lib_SettingUpData( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data" id="40a7112f-240b-46cd-bcaf-933a14bf4311" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+context.setProperty( objName, new Lib_SettingUpData( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting offer" id="40a7112f-240b-46cd-bcaf-933a14bf4311" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  * Métodos:
- * 		- getOffer
+ * 		- getValidOffers_Carriers //Utilizado en los filtros filter_marketingCarrier y filter_operatingCarrier
  * 		- filter_numScales
  * 		- filter_priceClass
  * 		- filter_marketingCarrier
  * 		- filter_operatingCarrier
- * 		- 
- * 
+ * 		- filter_flightNum
+ * 		- filter_airlinesMarketingCarrier
+ * 		- filter_airlinesOperatingCarrier
+ * 		- filter_beforeTime
+ * 		- filter_afterTime
+ * 		- getRandomOffer
+ * 		- getOffer 
  */
  
 import groovy.json.JsonSlurper
@@ -547,6 +552,83 @@ class Lib_GettingData {
 		assert validOffers.size() > 0, " WARNING: no hay ofertas en la que todos los segmentos sea una de las siguientes aerolíneas con operating carrier -> $aOC"
 		return validOffers
 	}
+
+	        	//Devuelve ofertas en las que el primer segmento salga antes de la hora indicada
+     def filter_beforeTime( allOffers, time, rs ) {
+		logger.info ':: RUNNING -> ../filter_berofeTime'
+		  
+          def validOffers   = []
+		def isValid		= true
+		def refs		= []
+		def ref			= ''
+		def flightSegment	= []
+            
+       	if ( 'NO' == time || 'RANDOM' == time || '' == time) {
+			validOffers	= allOffers
+		} else {
+
+			if ( time.size() < 5 ) {
+				time = '0' + time
+			}			
+            
+	       	allOffers.each {
+		      	isValid = true
+	      		refs    = it.OfferItem[0].FareDetail.FareComponent[0].SegmentRefs.toString().split(' ')
+		      	ref = refs[0]
+		      	flightSegment   = rs.DataLists.FlightSegmentList.FlightSegment.find {
+	               	it.@SegmentKey.toString().equals(ref)
+	           	}
+	           
+	           if ( flightSegment.Departure.Time.toString() > time ) {  isValid = false }
+	           if ( isValid ) {    validOffers << it }
+  			}	
+		}	
+		
+       	assert validOffers.size() > 0, "ERROR: no hay ofertas con salida antes de la hora solicitada. Hora solicitada: $time H"
+       	return validOffers
+   	}
+
+			//Devuelve ofertas en las que el primer segmento salga después de la hora indicada
+     def filter_afterTime( allOffers, time, rs ) {
+		  logger.info ':: RUNNING -> ../filter_afterTime'
+		  
+       	def validOffers     = []
+	  	def isValid		= true
+	  	def refs		= []
+	  	def ref			= ''
+	  	def flightSegment	= []
+
+       	if ( 'NO' == time || 'RANDOM' == time || '' == time) {
+			validOffers	= allOffers
+		} else {
+			
+			if ( time.size() < 5 ) {
+				time = '0' + time
+			}
+			
+       		allOffers.each {
+           		isValid = true
+           		refs    = it.OfferItem[0].FareDetail.FareComponent[0].SegmentRefs.toString().split(' ')
+           		ref = refs[0]
+          		flightSegment   = rs.DataLists.FlightSegmentList.FlightSegment.find {
+                    	it.@SegmentKey.toString().equals(ref)
+                	}
+                if ( flightSegment.Departure.Time.toString() < time ) {  isValid = false }
+                if ( isValid ) { validOffers << it }
+       		}
+		}
+       		
+            assert validOffers.size() > 0, "ERROR: no hay ofertas con salida después de la hora solicitada. Hora solicitada: $time H"
+            return validOffers
+   	}
+   	
+		//Devuelve una oferta de todas las ofertas válidas pasadas por parámetro
+	def getRandomOffer( validOffers ) {
+		logger.info ':: RUNNING -> ../getRandomOffer'
+		def random  = new Random()
+		def numRandom   = random.nextInt( validOffers.size())
+		return validOffers[numRandom]
+	}
 	
 		//Devuelve una oferta de todas las disponibles según los criterios
 	def getOffer( 	numScales, priceClass, marketingCarrier,
@@ -567,15 +649,118 @@ class Lib_GettingData {
 		validOffers	= filter_flightNum( validOffers, flightNum, rs )
 		validOffers	= filter_airlinesMarketingCarrier( validOffers, airlinesMarketingCarrier, rs )
 		validOffers	= filter_airlinesOperatingCarrier( validOffers, airlinesOperatingCarrier, rs )
+		validOffers	= filter_beforeTime( validOffers, beforeTime, rs )
+		validOffers	= filter_afterTime( validOffers, afterTime, rs )
 
-		logger.info validOffers
-		logger.info validOffers.size()
+		offer		= getRandomOffer ( validOffers )
+		
 		return offer
 	}
 }
 
-final objName	= "cntx_GD"
-context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_General XMLs" id="51c543eb-4146-4e99-9126-55d79a946b20" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+final objName	= "cntx_GO"
+context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Setting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script>/*
+ * Métodos:
+ * 		- 
+ */
+ 
+import groovy.json.JsonSlurper
+
+class Lib_SettingDataFromOfferID {
+
+	def public testRunner, context, logger
+
+	def Lib_SettingDataFromOfferID ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	 = whichLogger
+		this.context	 = whichContext
+		this.testRunner = whichTestRunner
+	}
+
+		//Método que se usa en los filtros de MarketingCarrier y OperatingCarrier
+	def setDataFromOfferID ( offerID, numADTs, numCHDs, numINFs, rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Setting data from offer/setDataFromOfferID'
+		
+		def offerItem	= ''
+		def data	= 	[	'totalPriceOffer'		: 'N/A',
+						'currency'			: 'N/A',
+						'offerItemID_ADT'		: 'N/A',
+						'offerItemID_CHD'		: 'N/A',
+						'offerItemID_INF'		: 'N/A',
+						'totalPriceADTS'		: 'N/A',
+						'totalPriceCHDS'		: 'N/A',
+						'totalPriceINFS'		: 'N/A',
+						'totalPricePerADT'		: 'N/A',
+						'totalPricePerCHD'		: 'N/A',
+						'totalPricePerINF'		: 'N/A',
+						'basePricePerADT'		: 'N/A',
+						'basePricePerCHD'		: 'N/A',
+						'basePricePerINF'		: 'N/A',
+						'taxesPricePerADT'		: 'N/A',
+						'taxesPricePerCHD'		: 'N/A',
+						'taxesPricePerINF'		: 'N/A',
+					]
+		def priceClassLst	= []
+		def segmentLst		= []
+		
+		def offer = rs.OffersGroup.AirlineOffers.Offer.find() {
+			it.@OfferID.toString().equals(offerID)
+		}
+
+		data.totalPriceOffer 	= offer.TotalPrice.SimpleCurrencyPrice
+		data.currency			= offer.TotalPrice.SimpleCurrencyPrice.@Code.toString()
+		
+		offer.OfferItem[0].FareDetail.FareComponent.each() {
+			priceClassLst	&lt;&lt; it.PriceClassRef
+			segmentLst	&lt;&lt; it.SegmentRefs.toString().split(' ')
+		}
+
+		if ( numADTs != '0' ) {
+			offerItem	= 	offer.OfferItem.find() {
+							it.Service.PassengerRefs.toString().contains('ADULT')
+						}
+			data.offerItemID_ADT	= offerItem.@OfferItemID.toString()
+			data.totalPriceADTS		= offerItem.TotalPriceDetail.TotalAmount.SimpleCurrencyPrice
+			data.totalPricePerADT	= offerItem.FareDetail.Price.TotalAmount.SimpleCurrencyPrice
+			data.basePricePerADT	= offerItem.FareDetail.Price.BaseAmount
+			data.taxesPricePerADT	= offerItem.FareDetail.Price.Taxes.Total
+			
+		}
+
+		if ( numCHDs != '0' ) {
+			offerItem	= 	offer.OfferItem.find() {
+							it.Service.PassengerRefs.toString().contains('CHILD')
+						}
+			data.offerItemID_CHD	= offerItem.@OfferItemID.toString()
+			data.totalPriceCHDS		= offerItem.TotalPriceDetail.TotalAmount.SimpleCurrencyPrice
+			data.totalPricePerCHD	= offerItem.FareDetail.Price.TotalAmount.SimpleCurrencyPrice
+			data.basePricePerCHD	= offerItem.FareDetail.Price.BaseAmount
+			data.taxesPricePerCHD	= offerItem.FareDetail.Price.Taxes.Total
+			
+		}
+		
+		if ( numINFs != '0' ) {
+			offerItem	= 	offer.OfferItem.find() {
+							it.Service.PassengerRefs.toString().contains('INFANT')
+						}
+			data.offerItemID_INF	= offerItem.@OfferItemID.toString()
+			data.totalPriceINFS		= offerItem.TotalPriceDetail.TotalAmount.SimpleCurrencyPrice
+			data.totalPricePerINF	= offerItem.FareDetail.Price.TotalAmount.SimpleCurrencyPrice
+			data.basePricePerINF	= offerItem.FareDetail.Price.BaseAmount
+			data.taxesPricePerINF	= offerItem.FareDetail.Price.Taxes.Total
+			
+		}			
+
+		data.each(){
+			testRunner.testCase.setPropertyValue( it.key.toString(), it.value.toString() )
+		}
+		
+		testRunner.testCase.setPropertyValue( 'priceClassLst', priceClassLst.toString().replace('[', '').replace(']','') )
+		testRunner.testCase.setPropertyValue( 'segmentLst', segmentLst.toString().replace('[', '').replace(']','') )
+	}
+}
+
+final objName	= "cntx_SDFO"
+context.setProperty( objName, new Lib_SettingDataFromOfferID( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_General XMLs" id="51c543eb-4146-4e99-9126-55d79a946b20" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getPointOfSale_XML
  *		- getParty_XML
@@ -1708,18 +1893,6 @@ Lib_xxxxx.run( testRunner, context)
 final ss = context.cntx_XXXX
 
 frase = ss.write("prueba")
-return "ok"</script></con:config></con:testStep><con:testStep type="groovy" name="Para probar" id="db5f0631-5d41-4983-b3a8-7b2d5fc4edbc" disabled="true"><con:settings/><con:config><script>def TestSteps			= testRunner.testCase.testSuite.project.getWorkspace().getProjectByName('Library').getTestSuiteByName('Libraries').getTestCaseByName('Libs')
-def Lib_prueba			= TestSteps.getTestStepByName('LIB_General XMLs') //#############
-
-log.info Lib_prueba.name
-Lib_prueba.run( testRunner, context)
-
-final ss = context.cntx_SF //#############
-
-nombre = ss.get_previousStepName()
-log.info nombre
-
-nombre.prueba()
 return "ok"</script></con:config></con:testStep><con:properties><con:property><con:name>*                       LISTS</con:name><con:value>*</con:value></con:property><con:property><con:name>**                     LST_IATAs</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_masheryUserName_BETA</con:name><con:value> {
 									  "0000002"	: "ibreptestagg"
 									, "00000022"	: "ibreptestagg"
