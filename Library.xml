@@ -384,7 +384,7 @@ class Lib_GettingData {
 		if ( 'NO' == mC || 'RANDOM' == mC || '' == mC ) {
 			validOffers	= allOffers
 		} else {
-			rs.Body.AirShoppingRS.DataLists.FlightSegmentList.FlightSegment.each() {
+			rs.DataLists.FlightSegmentList.FlightSegment.each() {
 				if ( mC.contains(it.MarketingCarrier.AirlineID.toString()) ) {
 					flightSegmentsValid << it.@SegmentKey.toString()
 				}
@@ -409,7 +409,7 @@ class Lib_GettingData {
 		if ( 'NO' == oC || 'RANDOM' == oC || '' == oC ) {
 			validOffers	= allOffers
 		} else {
-			rs.Body.AirShoppingRS.DataLists.FlightSegmentList.FlightSegment.each() {
+			rs.DataLists.FlightSegmentList.FlightSegment.each() {
 				if ( oC.contains(it.OperatingCarrier.AirlineID.toString()) ) {
 					flightSegmentsValid << it.@SegmentKey.toString()
 				}
@@ -421,7 +421,6 @@ class Lib_GettingData {
 		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con operatingCarrier -> $oC"
 		return validOffers
 	}
-
 
 		//Devuelve las ofertas según la propiedad 'flightNum'
 			//Se tiene en cuenta las escalas. 
@@ -440,7 +439,7 @@ class Lib_GettingData {
 		} else {
 			fN	= fN.split(',')
 			fN.each() { num ->
-				flightSegments << rs.Body.AirShoppingRS.DataLists.FlightSegmentList.FlightSegment.find() {
+				flightSegments << rs.DataLists.FlightSegmentList.FlightSegment.find() {
 					it.MarketingCarrier.FlightNumber.toString().equals(num)
 				}.@SegmentKey.toString()
 				assert flightSegments != null, "ERROR: no hay segmento con número de vuelo $num"	
@@ -468,11 +467,91 @@ class Lib_GettingData {
 		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con operatingCarrier -> $fN"
 		return validOffers
 	}
+
+		//Devuelve las ofertas según la propiedad 'airlinesMarketingCarrier'
+			//Todos los segmentos serán de una de las propiedades indicadas
+	def filter_airlinesMarketingCarrier( allOffers, aMC, rs ){
+		logger.info ':: RUNNING -> ../filter_airlinesMarketingCarrier'
+		
+		def validOffers		= []
+		def isValid			= true
+		def flightSegment		= []
+		def segmentsRefLst		= []
+		
+		if ( 'NO' == aMC || 'RANDOM' == aMC || '' == aMC ) {
+			validOffers	= allOffers
+		} else {
+
+			allOffers.each() { offer ->
+				segmentsRefLst	= []
+				isValid		= true
+				offer.OfferItem[0].FareDetail.FareComponent.each() {
+					segmentsRefLst << it.SegmentRefs
+					segmentsRefLst	= segmentsRefLst.toString().replace('[', '').replace(']', '')
+					segmentsRefLst.split(' ').each() { segment ->
+						rs.DataLists.FlightSegmentList.FlightSegment.each() { flightSeg ->
+							if ( flightSeg.@SegmentKey.toString().equals(segment.toString()) ) {
+								if ( !aMC.toString().contains(flightSeg.MarketingCarrier.AirlineID.toString() ) ) {
+									isValid = false
+								}
+							}
+						}
+					}
+				}
+				if ( isValid ) { 
+					validOffers << offer
+				}
+			}
+		}
+		
+		assert validOffers.size() > 0, " WARNING: no hay ofertas en la que todos los segmentos sea una de las siguientes aerolíneas con marketing carrier -> $aMC"
+		return validOffers
+	}
+
+		//Devuelve las ofertas según la propiedad 'airlinesOperatingCarrier'
+			//Todos los segmentos serán de una de las propiedades indicadas
+	def filter_airlinesOperatingCarrier( allOffers, aOC, rs ){
+		logger.info ':: RUNNING -> ../filter_airlinesOperatingCarrier'
+		
+		def validOffers		= []
+		def isValid			= true
+		def flightSegment		= []
+		def segmentsRefLst		= []
+		
+		if ( 'NO' == aOC || 'RANDOM' == aOC || '' == aOC) {
+			validOffers	= allOffers
+		} else {
+
+			allOffers.each() { offer ->
+				segmentsRefLst	= []
+				isValid		= true
+				offer.OfferItem[0].FareDetail.FareComponent.each() {
+					segmentsRefLst << it.SegmentRefs
+					segmentsRefLst	= segmentsRefLst.toString().replace('[', '').replace(']', '')
+					segmentsRefLst.split(' ').each() { segment ->
+						rs.DataLists.FlightSegmentList.FlightSegment.each() { flightSeg ->
+							if ( flightSeg.@SegmentKey.toString().equals(segment.toString()) ) {
+								if ( !aOC.toString().contains(flightSeg.OperatingCarrier.AirlineID.toString() ) ) {
+									isValid = false
+								}
+							}
+						}
+					}
+				}
+				if ( isValid ) { 
+					validOffers << offer
+				}
+			}
+		}
+		
+		assert validOffers.size() > 0, " WARNING: no hay ofertas en la que todos los segmentos sea una de las siguientes aerolíneas con operating carrier -> $aOC"
+		return validOffers
+	}
 	
 		//Devuelve una oferta de todas las disponibles según los criterios
 	def getOffer( 	numScales, priceClass, marketingCarrier,
-				operatingCarrier, flightNum, airlines, 
-				beforeTime, afterTime, rs, citiesLst ) {
+				operatingCarrier, flightNum, airlinesMarketingCarrier, 
+				airlinesOperatingCarrier, beforeTime, afterTime, rs, citiesLst ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data/getOffer'
 		
 		def offer			= ''
@@ -480,12 +559,14 @@ class Lib_GettingData {
 		def validOffers	= []
 		def numSegments	= citiesLst.split(',').size() / 2
 		
-		allOffers 	= rs.Body.AirShoppingRS.OffersGroup.AirlineOffers.Offer
+		allOffers 	= rs.OffersGroup.AirlineOffers.Offer
 		validOffers	= filter_numScales( allOffers, numScales, rs, numSegments )
 		validOffers	= filter_priceClass( validOffers, priceClass, rs )
 		validOffers	= filter_marketingCarrier( validOffers, marketingCarrier, rs )
 		validOffers	= filter_operatingCarrier( validOffers, operatingCarrier, rs )
 		validOffers	= filter_flightNum( validOffers, flightNum, rs )
+		validOffers	= filter_airlinesMarketingCarrier( validOffers, airlinesMarketingCarrier, rs )
+		validOffers	= filter_airlinesOperatingCarrier( validOffers, airlinesOperatingCarrier, rs )
 
 		logger.info validOffers
 		logger.info validOffers.size()
