@@ -278,6 +278,7 @@ context.setProperty( objName, new Lib_SettingUpData( testRunner, context, log) )
  * 		- filter_afterTime
  * 		- getRandomOffer
  * 		- getOffer 
+ * 		- getResponse
  */
  
 import groovy.json.JsonSlurper
@@ -656,6 +657,15 @@ class Lib_GettingData {
 		
 		return offer
 	}
+
+			//Devuelve el response
+	def getResponse( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data/getResponse'
+		
+		def response	= rs.ShoppingResponseID.ResponseID
+		
+		return response
+	}
 }
 
 final objName	= "cntx_GO"
@@ -935,6 +945,8 @@ final objName	= "cntx_GXML"
 context.setProperty( objName, new LIB_GeneralXMLs ( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_AirShopping XMLs" id="22396d18-5f48-4f24-b0d8-9b1bbb857b9b" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getCoreQuery_XML 
+ *		- getPreferences_XML
+ *		- getDataLists_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1152,6 +1164,106 @@ class LIB_AirShoppingXMLs {
 
 final objName	= "cntx_ASXML"
 context.setProperty( objName, new LIB_AirShoppingXMLs ( testRunner, context, log) )
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OfferPrice XMLs" id="b1fa03fe-9c8c-4933-bd35-6e568fb6d42f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+ *	XML:
+ *		- getQuery_XML
+ *		- getQualifier_XML
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_OfferPriceXMLs {
+	
+	//XMLs
+	def query_XML		= """<Query>
+							<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]">
+								[OFFERITEMS]
+							</Offer>
+						</Query>"""
+	
+	def offerItem_XML	= """<OfferItem OfferItemID="[OFFERITEM]">
+							<PassengerRefs>[TAGS]</PassengerRefs>
+						</OfferItem>"""
+
+	def qualifier_XML	= """<Qualifier>
+				            <SpecialNeedQualifiers>
+				               <Code>DISA</Code>
+				            </SpecialNeedQualifiers>
+				         </Qualifier>"""
+							
+
+	def public testRunner, context, logger
+
+	def LIB_OfferPriceXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+
+		//Devuelve XML de Query
+	def getQuery_XML( 	numADT, numCHD, numINF, responseID,
+					offerItemID_ADT, offerItemID_CHD, offerItemID_INF, offerID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OfferPrice XMLs/getQuery_XML'
+
+		def tags 		= ''
+		def offerItems	= ''
+		
+		for ( int i=0; i < numADT.toInteger(); i++ ){
+			tags	= tags + "ADULT_0" + (i+1)
+			if ( i != (numADT.toInteger()-1)) {
+				tags	= tags + " "
+			}
+		}
+		
+		if ( offerItemID_ADT != ""  && offerItemID_ADT != 'N/A' ) {
+			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", offerItemID_ADT).replace("[TAGS]", tags)
+		}
+		
+		tags = ""
+		for ( int i=0; i < numCHD.toInteger(); i++ ){
+			tags	= tags + "CHILD_0" + (i+1)
+			if ( i != (numCHD.toInteger()-1)) {
+				tags	= tags + " "
+			}
+		}
+		
+		if ( offerItemID_CHD != "" && offerItemID_CHD != 'N/A' ) {
+			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", offerItemID_CHD).replace("[TAGS]", tags)
+		}
+		
+		tags = ""
+		for ( int i=0; i < numINF.toInteger(); i++ ){
+			tags	= tags + "INFANT_0" + (i+1)
+			if ( i != (numINF.toInteger()-1)) {
+				tags	= tags + " "
+			}
+		}
+		
+		if ( offerItemID_INF != "" && offerItemID_INF != 'N/A' ) {
+			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", offerItemID_INF).replace("[TAGS]", tags)
+		}
+
+		query_XML	= query_XML.replace("[OFFERID]"	, offerID		)
+						 .replace("[RESPONSEID]"	, responseID	)
+						 .replace("[OFFERITEMS]"	, offerItems	)		
+			
+		return query_XML
+	}	
+
+		//Devuelve XML de CoreQuery
+	def getQualifier_XML( specialNeeds ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OfferPrice XMLs/getQualifier_XML'
+
+		if( '' == specialNeeds || 'NO' == specialNeeds ) {
+			qualifier_XML	= ''
+		} // else manda el XML tal cual
+		
+		return qualifier_XML
+	}
+}
+
+final objName	= "cntx_OPXML"
+context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log) )
 ]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
 		/*
 		 * 	cloud: https://api.iberia.com/iberia/cloud/ndc/AirShopping/15.2/v1
@@ -1272,8 +1384,7 @@ context.setProperty( objName, new LIB_AirShoppingXMLs ( testRunner, context, log
 									, "7823708"	: "I"
 									, "78237084"	: "I"
 								} """	
-	////////////////////////////////							
-
+	////////////////////////////////
 
 testRunner.testCase.setPropertyValue ( 'lst_masheryUserName_BETA'	, lst_masheryUserName_BETA		)
 testRunner.testCase.setPropertyValue ( 'lst_apiKey_BETA'			, lst_apiKey_BETA				)
@@ -1281,7 +1392,9 @@ testRunner.testCase.setPropertyValue ( 'lst_masheryUserName_UATA'	, lst_masheryU
 testRunner.testCase.setPropertyValue ( 'lst_apiKey_UATA'			, lst_apiKey_UATA				)
 testRunner.testCase.setPropertyValue ( 'lst_masheryUserName_UATD'	, lst_masheryUserName_UATD		)
 testRunner.testCase.setPropertyValue ( 'lst_apiKey_UATD'			, lst_apiKey_UATD				)
-testRunner.testCase.setPropertyValue ( 'lst_IATAorNOIATA'			, lst_IATAorNOIATA				)</script></con:config></con:testStep><con:testStep type="groovy" name="LST_Endpoints" id="9522933c-bf2e-4050-97f1-86312b385b7c" disabled="true"><con:settings/><con:config><script>
+testRunner.testCase.setPropertyValue ( 'lst_IATAorNOIATA'			, lst_IATAorNOIATA				)
+
+log.info " **LST_IatasYApikeys ha sido actualizada."</script></con:config></con:testStep><con:testStep type="groovy" name="LST_Endpoints" id="9522933c-bf2e-4050-97f1-86312b385b7c" disabled="true"><con:settings/><con:config><script>
 // ENDPOINTS VÁLIDOS PARA ENTORNOS DEV, UAT, BETA, PRE y PRO
 	//######### Versión 16 #########
 		// CON MASHERY.............................................
@@ -1613,7 +1726,7 @@ lst_listas_v17.each() { item ->
 	testRunner.testCase.setPropertyValue ( item.key	, item.value )
 }
 
-return 'Traspaso hecho'</script></con:config></con:testStep><con:testStep type="groovy" name="LST_PaxData" id="aac337a6-75f6-4b2b-a868-8da607385171" disabled="true"><con:settings/><con:config><script><![CDATA[ /*
+log.info " **LST_Endpoints ha sido actualizada."</script></con:config></con:testStep><con:testStep type="groovy" name="LST_PaxData" id="aac337a6-75f6-4b2b-a868-8da607385171" disabled="true"><con:settings/><con:config><script><![CDATA[ /*
  * Datos de todos los posibles pasajeros para una reserva.
  * Datos de 9 adultos.
  * Datos de 6 childs.
@@ -1852,7 +1965,9 @@ lst_infants << (Infant_06	=	"""{	  Birthdate		: '2018-09-22'
 
 testRunner.testCase.setPropertyValue ( 'lst_adults'	, lst_adults.toString()	)
 testRunner.testCase.setPropertyValue ( 'lst_childs'	, lst_childs.toString()	)
-testRunner.testCase.setPropertyValue ( 'lst_infants'	, lst_infants.toString() )]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### OTHERS ####" id="f8c8774d-e2e1-4d13-b99e-5048f67bc056" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="Ex: Call to functions" id="136f2be4-d691-44c2-96ee-92104391bcbd" disabled="true"><con:settings/><con:config><script>/*************************************************************************
+testRunner.testCase.setPropertyValue ( 'lst_infants'	, lst_infants.toString() )
+
+log.info " **LST_PaxData ha sido actualizada."]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### OTHERS ####" id="f8c8774d-e2e1-4d13-b99e-5048f67bc056" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="Ex: Call to functions" id="136f2be4-d691-44c2-96ee-92104391bcbd" disabled="true"><con:settings/><con:config><script>/*************************************************************************
  * 	Ejemplo de cómo empezar una librería	
  */
 
