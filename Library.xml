@@ -672,8 +672,8 @@ final objName	= "cntx_GO"
 context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	Métodos:
  *		- setDataFromOfferID
- *		- getParty_XML
  *		- gettingOfferItemsFromOfferPrice
+ *		- getOfferID
  */
  
 import groovy.json.JsonSlurper
@@ -694,6 +694,7 @@ class Lib_GettingDataFromOfferID {
 		
 		def offerItem	= ''
 		def data	= 	[	'totalPriceOffer'		: 'N/A',
+						'totalPriceToPay'		: 'N/A',
 						'currency'			: 'N/A',
 						'offerItemID_ADT'		: 'N/A',
 						'offerItemID_CHD'		: 'N/A',
@@ -719,6 +720,7 @@ class Lib_GettingDataFromOfferID {
 		}
 
 		data.totalPriceOffer 	= offer.TotalPrice.SimpleCurrencyPrice
+		data.totalPriceToPay	= data.totalPriceOffer
 		data.currency			= offer.TotalPrice.SimpleCurrencyPrice.@Code.toString()
 		
 		offer.OfferItem[0].FareDetail.FareComponent.each() {
@@ -770,8 +772,8 @@ class Lib_GettingDataFromOfferID {
 		testRunner.testCase.setPropertyValue( 'segmentLst', segmentLst.toString().replace('[', '').replace(']','') )
 	}
 
-	def gettingOfferItemsFromOfferPrice ( nADT, nCHD, nINF, rs ) {
-		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/gettingOfferItemsFromOfferPrice'
+	def getOfferItemsFromOfferPrice ( nADT, nCHD, nINF, rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItemsFromOfferPrice'
 
 		def nItem 					= 0
 		def offerItemID_ADT_OfferPrice 	= ''
@@ -802,6 +804,13 @@ class Lib_GettingDataFromOfferID {
 		testRunner.testCase.setPropertyValue( 'offerItemID_CHD_OfferPrice', offerItemID_CHD_OfferPrice )
 		testRunner.testCase.setPropertyValue( 'offerItemID_INF_OfferPrice', offerItemID_INF_OfferPrice )
 
+	}
+
+	def getOfferID ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferID'
+
+		def offer = rs.PricedOffer.@OfferID.toString()
+		return offer
 	}
 }
 
@@ -1300,9 +1309,9 @@ class LIB_OfferPriceXMLs {
 
 final objName	= "cntx_OPXML"
 context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log) )
-]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderCreate XMLs" id="a1324941-43a4-4b49-98ca-a2b61a733d9c" disabled="true"><con:settings/><con:config><script>/*
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderCreate XMLs" id="a1324941-43a4-4b49-98ca-a2b61a733d9c" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
- *		- getQueryOrderCreate_XML
+ *		- getOrder_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1310,7 +1319,21 @@ import groovy.json.JsonSlurper
 class LIB_OrderCreateXMLs {
 	
 	//XMLs
+	def query_XML		= """<Query>
+							[ORDER]
+							[PAYMENTS]
+							[DATALISTS]
+						</Query>"""
+
+	def order_XML		= """<Order>
+							<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]">
+								[OFFERITEMS]
+							</Offer>
+						</Order>"""
 	
+	def offerItem_XML	= """<OfferItem OfferItemID="[OFFERITEM]">
+							<PassengerRefs>[TAGS]</PassengerRefs>
+						</OfferItem>"""	
 							
 
 	def public testRunner, context, logger
@@ -1322,17 +1345,58 @@ class LIB_OrderCreateXMLs {
 	}
 
 		//Devuelve XML de Query
-	def getQueryOrderCreate_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, rsID ) {
-		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getQueryOrderCreate_XML'
+	def getOrder_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, offerID, rsID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getOrder_XML'
 
-		//hay q construirlo de nuevo con los nuevos offerItems obtenidos del offerprice.
-	}
-	
+		def tags 		= ''
+		def offerItems	= ''
+		
+		for ( int i=0; i < nADT.toInteger(); i++ ){
+			tags	= tags + "ADULT_0" + (i+1)
+			if ( i != (nADT.toInteger()-1)) {
+				tags	= tags + " "
+			}
+		}
+		
+		if ( oi_ADT != ""  && oi_ADT != 'N/A' ) {
+			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", oi_ADT).replace("[TAGS]", tags)
+		}
+		
+		tags = ""
+		for ( int i=0; i < nCHD.toInteger(); i++ ){
+			tags	= tags + "CHILD_0" + (i+1)
+			if ( i != (nCHD.toInteger()-1)) {
+				tags	= tags + " "
+			}
+		}
+		
+		if ( oi_CHD != "" && oi_CHD != 'N/A' ) {
+			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", oi_CHD).replace("[TAGS]", tags)
+		}
+		
+		tags = ""
+		for ( int i=0; i < nINF.toInteger(); i++ ){
+			tags	= tags + "INFANT_0" + (i+1)
+			if ( i != (nINF.toInteger()-1)) {
+				tags	= tags + " "
+			}
+		}
+		
+		if ( oi_INF != "" && oi_INF != 'N/A' ) {
+			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", oi_INF).replace("[TAGS]", tags)
+		}
+
+		order_XML	= order_XML.replace("[OFFERID]"	, offerID		)
+						 .replace("[RESPONSEID]"	, rsID		)
+						 .replace("[OFFERITEMS]"	, offerItems	)		
+			
+		return order_XML
+	}	
 }
 
 final objName	= "cntx_OCXML"
 context.setProperty( objName, new LIB_OrderCreateXMLs ( testRunner, context, log) )
-</script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
 		/*
 		 * 	cloud: https://api.iberia.com/iberia/cloud/ndc/AirShopping/15.2/v1
 		 * 	78213645 First in Service Spain
@@ -2035,7 +2099,82 @@ testRunner.testCase.setPropertyValue ( 'lst_adults'	, lst_adults.toString()	)
 testRunner.testCase.setPropertyValue ( 'lst_childs'	, lst_childs.toString()	)
 testRunner.testCase.setPropertyValue ( 'lst_infants'	, lst_infants.toString() )
 
-log.info " **LST_PaxData ha sido actualizada."]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### OTHERS ####" id="f8c8774d-e2e1-4d13-b99e-5048f67bc056" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="Ex: Call to functions" id="136f2be4-d691-44c2-96ee-92104391bcbd" disabled="true"><con:settings/><con:config><script>/*************************************************************************
+log.info " **LST_PaxData ha sido actualizada."]]></script></con:config></con:testStep><con:testStep type="groovy" name="LST_Payments" id="867aed6d-83a3-4211-b29f-8a14d0cb10ac" disabled="true"><con:settings/><con:config><script><![CDATA[
+def lst_payments_v16	= 	"""	{	'CASH_ORDERCREATE_v16'			:	'[CASH_ORDERCREATE_v16]',
+								'CASH_AIRDOCISSUE_v16'			:	'[CASH_AIRDOCISSUE_v16]',
+								'CASH_ORDERCHANGE_v16'			:	'[CASH_ORDERCHANGE_v16]',
+								'NO_MASHERY_CC_ORDERCREATE_v16'	:	'[NO_MASHERY_CC_ORDERCREATE_v16]',
+								'NO_MASHERY_CC_AIRDOCISSUE_v16'	:	'[NO_MASHERY_CC_AIRDOCISSUE_v16]',
+								'NO_MASHERY_CC_ORDERCHANGE_v16'	:	'[NO_MASHERY_CC_ORDERCHANGE_v16]',
+								'YES_MASHERY_CC_ORDERCREATE_v16'	:	'[YES_MASHERY_CC_ORDERCREATE_v16]',
+								'YES_MASHERY_CC_AIRDOCISSUE_v16'	:	'[YES_MASHERY_CC_AIRDOCISSUE_v16]',
+								'YES_MASHERY_CC_ORDERCHANGE_v16'	:	'[YES_MASHERY_CC_ORDERCHANGE_v16]'
+							} """
+
+def lst_payments_v17	= 	"""	{	'CASH_ORDERCREATE_v17'			:	'[CASH_ORDERCREATE_v17]',
+								'CASH_ORDERCHANGE_v17'			:	'[CASH_ORDERCHANGE_v17]',
+								'NO_MASHERY_CC_ORDERCREATE_v17'	:	'[NO_MASHERY_CC_ORDERCREATE_v17]',
+								'NO_MASHERY_CC_ORDERCHANGE_v17'	:	'[NO_MASHERY_CC_ORDERCHANGE_v17]',
+								'YES_MASHERY_CC_ORDERCREATE_v17'	:	'[YES_MASHERY_CC_ORDERCREATE_v17]',
+								'YES_MASHERY_CC_ORDERCHANGE_v17'	:	'[YES_MASHERY_CC_ORDERCHANGE_v17]'
+							} """
+
+
+
+//XMLs -------
+	//VERSION 16
+def CASH_ORDERCREATE_v16				= 	"""	<Payments>
+											<Payment>
+												<Type>CA</Type>
+												<Method>
+													<Cash CashInd="true"/>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+										</Payments>"""
+
+def CASH_AIRDOCISSUE_v16		=	"""	"""
+def CASH_ORDERCHANGE_v16		=	"""	"""
+def NO_MASHERY_CC_ORDERCREATE_v16		=	"""	"""
+def NO_MASHERY_CC_AIRDOCISSUE_v16		=	"""	"""
+def NO_MASHERY_CC_ORDERCHANGE_v16		=	"""	"""
+def YES_MASHERY_CC_ORDERCREATE_v16		=	"""	"""
+def YES_MASHERY_CC_AIRDOCISSUE_v16 	=	"""	"""
+def YES_MASHERY_CC_ORDERCHANGE_v16		=	"""	"""
+
+	//VERSION 17
+def CASH_ORDERCREATE_v17				=	"""	"""
+def CASH_ORDERCHANGE_v17				=	"""	"""
+def NO_MASHERY_CC_ORDERCREATE_v17		=	"""	"""
+def NO_MASHERY_CC_ORDERCHANGE_v17		=	"""	"""
+def YES_MASHERY_CC_ORDERCREATE_v17		=	"""	"""
+def YES_MASHERY_CC_ORDERCHANGE_v17		=	"""	"""
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+lst_payments_v16	= lst_payments_v16	.replace( "[CASH_ORDERCREATE_v16]"				, CASH_ORDERCREATE_v16 			)
+								.replace( "[CASH_AIRDOCISSUE_v16]"				, CASH_AIRDOCISSUE_v16 			)
+								.replace( "[CASH_ORDERCHANGE_v16]"				, CASH_ORDERCHANGE_v16 			)
+								.replace( "[NO_MASHERY_CC_ORDERCREATE_v16]"		, NO_MASHERY_CC_ORDERCREATE_v16 	)
+								.replace( "[NO_MASHERY_CC_AIRDOCISSUE_v16]"		, NO_MASHERY_CC_AIRDOCISSUE_v16 	)
+								.replace( "[NO_MASHERY_CC_ORDERCHANGE_v16]"		, NO_MASHERY_CC_ORDERCHANGE_v16 	)
+								.replace( "[YES_MASHERY_CC_ORDERCREATE_v16]"		, YES_MASHERY_CC_ORDERCREATE_v16 	)
+								.replace( "[YES_MASHERY_CC_AIRDOCISSUE_v16]"		, YES_MASHERY_CC_AIRDOCISSUE_v16 	)
+								.replace( "[YES_MASHERY_CC_ORDERCHANGE_v16]"		, YES_MASHERY_CC_ORDERCHANGE_v16 	)
+
+lst_payments_v17	= lst_payments_v17	.replace( "[CASH_ORDERCREATE_v17]"				, CASH_ORDERCREATE_v17 			)
+								.replace( "[CASH_ORDERCHANGE_v17]"				, CASH_ORDERCHANGE_v17 			)
+								.replace( "[NO_MASHERY_CC_ORDERCREATE_v17]"		, NO_MASHERY_CC_ORDERCREATE_v17 	)
+								.replace( "[NO_MASHERY_CC_ORDERCHANGE_v17]"		, NO_MASHERY_CC_ORDERCHANGE_v17 	)
+								.replace( "[YES_MASHERY_CC_ORDERCREATE_v17]"		, YES_MASHERY_CC_ORDERCREATE_v17 	)
+								.replace( "[YES_MASHERY_CC_ORDERCHANGE_v17]"		, YES_MASHERY_CC_ORDERCHANGE_v17 	)
+
+testRunner.testCase.setPropertyValue ( "lst_payments_v16"	, lst_payments_v16 )
+testRunner.testCase.setPropertyValue ( "lst_payments_v17"	, lst_payments_v17 )]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### OTHERS ####" id="f8c8774d-e2e1-4d13-b99e-5048f67bc056" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="Ex: Call to functions" id="136f2be4-d691-44c2-96ee-92104391bcbd" disabled="true"><con:settings/><con:config><script>/*************************************************************************
  * 	Ejemplo de cómo empezar una librería	
  */
 
@@ -2311,7 +2450,13 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 								, FOID_Number		: '32641593Q'
 								, FOID_Type		: 'NI'
 								, ContactInfoRef	: 'ADULT_01_CONTACT'
-							}]</con:value></con:property><con:property><con:name>**                     LST_Endpoints</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_v17_UAT_MASHERY_YES</con:name><con:value> {
+							}]</con:value></con:property><con:property><con:name>**                     LST_Payments</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_payments_v16</con:name><con:value><![CDATA[	{	'CASH_ORDERCREATE_v16'			:	'	<Payments> 											<Payment> 												<Type>CA</Type> 												<Method> 													<Cash CashInd="true"/> 												</Method> 												<Amount Code="EUR">[AMOUNT]</Amount> 												<Payer> 													<ContactInfoRefs>Payer</ContactInfoRefs> 												</Payer> 											</Payment> 										</Payments>', 								'CASH_AIRDOCISSUE_v16'			:	'	', 								'CASH_ORDERCHANGE_v16'			:	'	', 								'NO_MASHERY_CC_ORDERCREATE_v16'	:	'	', 								'NO_MASHERY_CC_AIRDOCISSUE_v16'	:	'	', 								'NO_MASHERY_CC_ORDERCHANGE_v16'	:	'	', 								'YES_MASHERY_CC_ORDERCREATE_v16'	:	'	', 								'YES_MASHERY_CC_AIRDOCISSUE_v16'	:	'	', 								'YES_MASHERY_CC_ORDERCHANGE_v16'	:	'	' 							} ]]></con:value></con:property><con:property><con:name>lst_payments_v17</con:name><con:value>	{	'CASH_ORDERCREATE_v17'			:	'	',
+								'CASH_ORDERCHANGE_v17'			:	'	',
+								'NO_MASHERY_CC_ORDERCREATE_v17'	:	'	',
+								'NO_MASHERY_CC_ORDERCHANGE_v17'	:	'	',
+								'YES_MASHERY_CC_ORDERCREATE_v17'	:	'	',
+								'YES_MASHERY_CC_ORDERCHANGE_v17'	:	'	'
+							} </con:value></con:property><con:property><con:name>**                     LST_Endpoints</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_v17_UAT_MASHERY_YES</con:name><con:value> {
 									  "AirShopping"	: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/AirShopping/17.2/v1"
 									, "OfferPrice"		: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/OfferPrice/17.2/v1"
 									, "OrderCreate"	: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/OrderCreate/17.2/v1"
