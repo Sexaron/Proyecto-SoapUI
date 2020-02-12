@@ -669,10 +669,11 @@ class Lib_GettingData {
 }
 
 final objName	= "cntx_GO"
-context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script>/*
+context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	Métodos:
  *		- setDataFromOfferID
  *		- getParty_XML
+ *		- gettingOfferItemsFromOfferPrice
  */
  
 import groovy.json.JsonSlurper
@@ -721,8 +722,8 @@ class Lib_GettingDataFromOfferID {
 		data.currency			= offer.TotalPrice.SimpleCurrencyPrice.@Code.toString()
 		
 		offer.OfferItem[0].FareDetail.FareComponent.each() {
-			priceClassLst	&lt;&lt; it.PriceClassRef
-			segmentLst	&lt;&lt; it.SegmentRefs.toString().split(' ')
+			priceClassLst	<< it.PriceClassRef
+			segmentLst	<< it.SegmentRefs.toString().split(' ')
 		}
 
 		if ( numADTs != '0' ) {
@@ -768,10 +769,44 @@ class Lib_GettingDataFromOfferID {
 		testRunner.testCase.setPropertyValue( 'priceClassLst', priceClassLst.toString().replace('[', '').replace(']','') )
 		testRunner.testCase.setPropertyValue( 'segmentLst', segmentLst.toString().replace('[', '').replace(']','') )
 	}
+
+	def gettingOfferItemsFromOfferPrice ( nADT, nCHD, nINF, rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/gettingOfferItemsFromOfferPrice'
+
+		def nItem 					= 0
+		def offerItemID_ADT_OfferPrice 	= ''
+		def offerItemID_CHD_OfferPrice 	= ''
+		def offerItemID_INF_OfferPrice 	= ''
+		
+		if ( nADT != '0' && nADT != 'NO' && nADT != '' ) {
+			offerItemID_ADT_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			nItem++
+		} else {
+			offerItemID_ADT_OfferPrice	= 'N/A'
+		}
+
+		if ( nCHD != '0' && nCHD != 'NO' && nCHD != '' ) {
+			offerItemID_CHD_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			nItem++
+		} else {
+			offerItemID_CHD_OfferPrice	= 'N/A'
+		}
+		
+		if ( nINF != '0' && nINF != 'NO' && nINF != '' ) {
+			offerItemID_INF_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+		} else {
+			offerItemID_INF_OfferPrice	= 'N/A'
+		}
+
+		testRunner.testCase.setPropertyValue( 'offerItemID_ADT_OfferPrice', offerItemID_ADT_OfferPrice )
+		testRunner.testCase.setPropertyValue( 'offerItemID_CHD_OfferPrice', offerItemID_CHD_OfferPrice )
+		testRunner.testCase.setPropertyValue( 'offerItemID_INF_OfferPrice', offerItemID_INF_OfferPrice )
+
+	}
 }
 
 final objName	= "cntx_GDFO"
-context.setProperty( objName, new Lib_GettingDataFromOfferID( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_General XMLs" id="51c543eb-4146-4e99-9126-55d79a946b20" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+context.setProperty( objName, new Lib_GettingDataFromOfferID( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_General XMLs" id="51c543eb-4146-4e99-9126-55d79a946b20" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getPointOfSale_XML
  *		- getParty_XML
@@ -1265,7 +1300,39 @@ class LIB_OfferPriceXMLs {
 
 final objName	= "cntx_OPXML"
 context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log) )
-]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderCreate XMLs" id="a1324941-43a4-4b49-98ca-a2b61a733d9c" disabled="true"><con:settings/><con:config><script>/*
+ *	XML:
+ *		- getQueryOrderCreate_XML
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_OrderCreateXMLs {
+	
+	//XMLs
+	
+							
+
+	def public testRunner, context, logger
+
+	def LIB_OrderCreateXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+
+		//Devuelve XML de Query
+	def getQueryOrderCreate_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, rsID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getQueryOrderCreate_XML'
+
+		//hay q construirlo de nuevo con los nuevos offerItems obtenidos del offerprice.
+	}
+	
+}
+
+final objName	= "cntx_OCXML"
+context.setProperty( objName, new LIB_OrderCreateXMLs ( testRunner, context, log) )
+</script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
 		/*
 		 * 	cloud: https://api.iberia.com/iberia/cloud/ndc/AirShopping/15.2/v1
 		 * 	78213645 First in Service Spain
