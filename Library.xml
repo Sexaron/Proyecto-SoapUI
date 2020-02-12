@@ -669,26 +669,27 @@ class Lib_GettingData {
 }
 
 final objName	= "cntx_GO"
-context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Setting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script>/*
- * Métodos:
- * 		- 
+context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script>/*
+ *	Métodos:
+ *		- setDataFromOfferID
+ *		- getParty_XML
  */
  
 import groovy.json.JsonSlurper
 
-class Lib_SettingDataFromOfferID {
+class Lib_GettingDataFromOfferID {
 
 	def public testRunner, context, logger
 
-	def Lib_SettingDataFromOfferID ( whichTestRunner, whichContext, whichLogger ){
+	def Lib_GettingDataFromOfferID ( whichTestRunner, whichContext, whichLogger ){
 		this.logger	 = whichLogger
 		this.context	 = whichContext
 		this.testRunner = whichTestRunner
 	}
 
 		//Método que se usa en los filtros de MarketingCarrier y OperatingCarrier
-	def setDataFromOfferID ( offerID, numADTs, numCHDs, numINFs, rs ) {
-		logger.info ':: RUNNING -> //Libs/LIB_Setting data from offer/setDataFromOfferID'
+	def getDataFromOfferID ( offerID, numADTs, numCHDs, numINFs, rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/setDataFromOfferID'
 		
 		def offerItem	= ''
 		def data	= 	[	'totalPriceOffer'		: 'N/A',
@@ -769,8 +770,8 @@ class Lib_SettingDataFromOfferID {
 	}
 }
 
-final objName	= "cntx_SDFO"
-context.setProperty( objName, new Lib_SettingDataFromOfferID( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_General XMLs" id="51c543eb-4146-4e99-9126-55d79a946b20" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+final objName	= "cntx_GDFO"
+context.setProperty( objName, new Lib_GettingDataFromOfferID( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_General XMLs" id="51c543eb-4146-4e99-9126-55d79a946b20" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getPointOfSale_XML
  *		- getParty_XML
