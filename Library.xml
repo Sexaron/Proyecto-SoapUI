@@ -2125,6 +2125,271 @@ def lst_payments_v17	= 	"""	{	'CASH_ORDERCREATE_v17'			:	'[CASH_ORDERCREATE_v17]
 	//VERSION 16
 def CASH_ORDERCREATE_v16				= 	"""	<Payments>
 											<Payment>
+												<Method>
+													<Cash/>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>Perez Perez</Surname>
+														<Given>Pepe</Given>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>666666666</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+											[SERVICEFEE]
+								           </Payments>"""
+
+def CASH_AIRDOCISSUE_v16		=	"""	<Payments>
+									<Payment>
+										<Type>
+											<Code>CA</Code>
+										</Type>
+										<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+										<Cash/>
+									</Payment>
+									[SERVICEFEE]
+								</Payments>"""
+								
+def CASH_ORDERCHANGE_v16		=	"""	<Payments>
+									<Payment>
+										<Method>
+											<Cash/>
+										</Method>
+										<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+										<Payer>
+											<Name>
+												<Surname>Perez Perez</Surname>
+												<Given>Pepe</Given>
+											</Name>
+											<Contacts>
+												<Contact>
+													<PhoneContact>
+														<Number>666666666</Number>
+													</PhoneContact>
+												</Contact>
+												<Contact>
+													<EmailContact>
+														<Address>[EMAILPAYER]</Address>
+													</EmailContact>
+												</Contact>
+											</Contacts>
+										</Payer>
+									</Payment>
+								</Payments>"""
+
+def NO_MASHERY_CC_ORDERCREATE_v16		=	"""	<Payments>
+											<Payment>
+												<Method>
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>250</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>Garcia Garcia</Surname>
+														<Given>Dinel</Given>
+														<Title>MR</Title>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>646666621</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+										</Payments>"""
+										
+def NO_MASHERY_CC_AIRDOCISSUE_v16		=	"""	<Payments>
+											<Payment>
+												<Type>
+													<Code>CC</Code>
+												</Type>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
+												<PaymentCard>
+													<CardType>[CARDTYPE]</CardType>
+													<SeriesCode>123</SeriesCode>
+													<CardHolderName>Donald</CardHolderName>
+													<CardHolderBillingAddress>
+														<Street>street 22222 block</Street>
+														<CityName>Madrid</CityName>
+														<StateProv>28</StateProv>
+														<PostalCode>28001</PostalCode>
+														<CountryCode>ES</CountryCode>
+													</CardHolderBillingAddress>
+													<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+													<EffectiveExpireDate>
+														<Expiration>1219</Expiration>
+													</EffectiveExpireDate>
+													<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+												</PaymentCard>
+											</Payment>
+										</Payments>"""
+
+def NO_MASHERY_CC_ORDERCHANGE_v16		=	"""	"""
+
+def YES_MASHERY_CC_ORDERCREATE_v16		=	"""	<Payments>
+											<Payment>
+												<Method>
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>iteggo enrique</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>Leganitos 21</Street>
+															<CityName>MAD</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>ItegGo</Surname>
+														<Given>Enrique</Given>
+														<Title>MR</Title>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>646666621</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+				               				[SERVICEFEE]
+										</Payments>"""
+
+def YES_MASHERY_CC_AIRDOCISSUE_v16 	=	"""	<Payments>
+											<Payment>
+												<Type>
+													<Code>CC</Code>
+												</Type>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<PaymentCard>
+													<CardType>[CARDTYPE]</CardType>
+													<CardNumber>[CARDNUM]</CardNumber>
+													<SeriesCode>123</SeriesCode>
+													<CardHolderName>Donald</CardHolderName>
+													<CardHolderBillingAddress>
+														<Street>street 22222 block</Street>
+														<CityName>Madrid</CityName>
+														<StateProv>28</StateProv>
+														<PostalCode>28001</PostalCode>
+														<CountryCode>ES</CountryCode>
+													</CardHolderBillingAddress>
+													<EffectiveExpireDate>
+														<Expiration>0825</Expiration>
+													</EffectiveExpireDate>
+												</PaymentCard>
+												<Associations>
+													<Group>
+														<Name>Enrique</Name>
+														<PassengerCount>1</PassengerCount>
+														<Contacts>
+															<Contact>
+																<EmailContact>
+																	<Address>[EMAILPAYER]</Address>
+																</EmailContact>
+															</Contact>
+														</Contacts>
+													</Group>
+												</Associations>
+											</Payment>
+											[SERVICEFEE]
+										</Payments>"""
+										
+def YES_MASHERY_CC_ORDERCHANGE_v16		=	"""	<Payments>
+											<Payment>
+												<Method>
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>iteggo enrique</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>Leganitos 21</Street>
+															<CityName>MAD</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<EffectiveExpireDate>
+															<Expiration>0521</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>ItegGo</Surname>
+														<Given>Enrique</Given>
+														<Title>MR</Title>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>646666621</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+										</Payments>"""
+
+	//VERSION 17
+def CASH_ORDERCREATE_v17				=	"""	<Payments>
+											<Payment>
 												<Type>CA</Type>
 												<Method>
 													<Cash CashInd="true"/>
@@ -2134,24 +2399,140 @@ def CASH_ORDERCREATE_v16				= 	"""	<Payments>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
 											</Payment>
+											[SERVICEFEE]
+										</Payments>"""
+										
+def CASH_ORDERCHANGE_v17				=	"""	<Payments>
+											<Payment>
+												<Type>CA</Type>
+												<Method>
+													<Cash CashInd="true"/>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>          					
 										</Payments>"""
 
-def CASH_AIRDOCISSUE_v16		=	"""	"""
-def CASH_ORDERCHANGE_v16		=	"""	"""
-def NO_MASHERY_CC_ORDERCREATE_v16		=	"""	"""
-def NO_MASHERY_CC_AIRDOCISSUE_v16		=	"""	"""
-def NO_MASHERY_CC_ORDERCHANGE_v16		=	"""	"""
-def YES_MASHERY_CC_ORDERCREATE_v16		=	"""	"""
-def YES_MASHERY_CC_AIRDOCISSUE_v16 	=	"""	"""
-def YES_MASHERY_CC_ORDERCHANGE_v16		=	"""	"""
+def NO_MASHERY_CC_ORDERCREATE_v17		=	"""	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>250</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+										</Payments>"""
 
-	//VERSION 17
-def CASH_ORDERCREATE_v17				=	"""	"""
-def CASH_ORDERCHANGE_v17				=	"""	"""
-def NO_MASHERY_CC_ORDERCREATE_v17		=	"""	"""
-def NO_MASHERY_CC_ORDERCHANGE_v17		=	"""	"""
-def YES_MASHERY_CC_ORDERCREATE_v17		=	"""	"""
-def YES_MASHERY_CC_ORDERCHANGE_v17		=	"""	"""
+def NO_MASHERY_CC_ORDERCHANGE_v17		=	"""	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>250</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+										</Payments>"""
+
+def YES_MASHERY_CC_ORDERCREATE_v17		=	"""	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<EffectiveExpireDate>
+															<Expiration>0521</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+											[SERVICEFEE]
+										</Payments>"""
+
+def YES_MASHERY_CC_ORDERCHANGE_v17		=	"""	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<EffectiveExpireDate>
+															<Expiration>0521</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>               				
+										</Payments>"""
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2450,13 +2831,402 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 								, FOID_Number		: '32641593Q'
 								, FOID_Type		: 'NI'
 								, ContactInfoRef	: 'ADULT_01_CONTACT'
-							}]</con:value></con:property><con:property><con:name>**                     LST_Payments</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_payments_v16</con:name><con:value><![CDATA[	{	'CASH_ORDERCREATE_v16'			:	'	<Payments> 											<Payment> 												<Type>CA</Type> 												<Method> 													<Cash CashInd="true"/> 												</Method> 												<Amount Code="EUR">[AMOUNT]</Amount> 												<Payer> 													<ContactInfoRefs>Payer</ContactInfoRefs> 												</Payer> 											</Payment> 										</Payments>', 								'CASH_AIRDOCISSUE_v16'			:	'	', 								'CASH_ORDERCHANGE_v16'			:	'	', 								'NO_MASHERY_CC_ORDERCREATE_v16'	:	'	', 								'NO_MASHERY_CC_AIRDOCISSUE_v16'	:	'	', 								'NO_MASHERY_CC_ORDERCHANGE_v16'	:	'	', 								'YES_MASHERY_CC_ORDERCREATE_v16'	:	'	', 								'YES_MASHERY_CC_AIRDOCISSUE_v16'	:	'	', 								'YES_MASHERY_CC_ORDERCHANGE_v16'	:	'	' 							} ]]></con:value></con:property><con:property><con:name>lst_payments_v17</con:name><con:value>	{	'CASH_ORDERCREATE_v17'			:	'	',
-								'CASH_ORDERCHANGE_v17'			:	'	',
-								'NO_MASHERY_CC_ORDERCREATE_v17'	:	'	',
-								'NO_MASHERY_CC_ORDERCHANGE_v17'	:	'	',
-								'YES_MASHERY_CC_ORDERCREATE_v17'	:	'	',
-								'YES_MASHERY_CC_ORDERCHANGE_v17'	:	'	'
-							} </con:value></con:property><con:property><con:name>**                     LST_Endpoints</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_v17_UAT_MASHERY_YES</con:name><con:value> {
+							}]</con:value></con:property><con:property><con:name>**                     LST_Payments</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_payments_v16</con:name><con:value><![CDATA[	{	'CASH_ORDERCREATE_v16'			:	'	<Payments>
+											<Payment>
+												<Method>
+													<Cash/>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>Perez Perez</Surname>
+														<Given>Pepe</Given>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>666666666</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+											[SERVICEFEE]
+								           </Payments>',
+								'CASH_AIRDOCISSUE_v16'			:	'	<Payments>
+									<Payment>
+										<Type>
+											<Code>CA</Code>
+										</Type>
+										<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+										<Cash/>
+									</Payment>
+									[SERVICEFEE]
+								</Payments>',
+								'CASH_ORDERCHANGE_v16'			:	'	<Payments>
+									<Payment>
+										<Method>
+											<Cash/>
+										</Method>
+										<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+										<Payer>
+											<Name>
+												<Surname>Perez Perez</Surname>
+												<Given>Pepe</Given>
+											</Name>
+											<Contacts>
+												<Contact>
+													<PhoneContact>
+														<Number>666666666</Number>
+													</PhoneContact>
+												</Contact>
+												<Contact>
+													<EmailContact>
+														<Address>[EMAILPAYER]</Address>
+													</EmailContact>
+												</Contact>
+											</Contacts>
+										</Payer>
+									</Payment>
+								</Payments>',
+								'NO_MASHERY_CC_ORDERCREATE_v16'	:	'	<Payments>
+											<Payment>
+												<Method>
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>250</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>Garcia Garcia</Surname>
+														<Given>Dinel</Given>
+														<Title>MR</Title>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>646666621</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+										</Payments>',
+								'NO_MASHERY_CC_AIRDOCISSUE_v16'	:	'	<Payments>
+											<Payment>
+												<Type>
+													<Code>CC</Code>
+												</Type>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
+												<PaymentCard>
+													<CardType>[CARDTYPE]</CardType>
+													<SeriesCode>123</SeriesCode>
+													<CardHolderName>Donald</CardHolderName>
+													<CardHolderBillingAddress>
+														<Street>street 22222 block</Street>
+														<CityName>Madrid</CityName>
+														<StateProv>28</StateProv>
+														<PostalCode>28001</PostalCode>
+														<CountryCode>ES</CountryCode>
+													</CardHolderBillingAddress>
+													<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+													<EffectiveExpireDate>
+														<Expiration>1219</Expiration>
+													</EffectiveExpireDate>
+													<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+												</PaymentCard>
+											</Payment>
+										</Payments>',
+								'NO_MASHERY_CC_ORDERCHANGE_v16'	:	'	',
+								'YES_MASHERY_CC_ORDERCREATE_v16'	:	'	<Payments>
+											<Payment>
+												<Method>
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>iteggo enrique</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>Leganitos 21</Street>
+															<CityName>MAD</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>ItegGo</Surname>
+														<Given>Enrique</Given>
+														<Title>MR</Title>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>646666621</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+				               				[SERVICEFEE]
+										</Payments>',
+								'YES_MASHERY_CC_AIRDOCISSUE_v16'	:	'	<Payments>
+											<Payment>
+												<Type>
+													<Code>CC</Code>
+												</Type>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<PaymentCard>
+													<CardType>[CARDTYPE]</CardType>
+													<CardNumber>[CARDNUM]</CardNumber>
+													<SeriesCode>123</SeriesCode>
+													<CardHolderName>Donald</CardHolderName>
+													<CardHolderBillingAddress>
+														<Street>street 22222 block</Street>
+														<CityName>Madrid</CityName>
+														<StateProv>28</StateProv>
+														<PostalCode>28001</PostalCode>
+														<CountryCode>ES</CountryCode>
+													</CardHolderBillingAddress>
+													<EffectiveExpireDate>
+														<Expiration>0825</Expiration>
+													</EffectiveExpireDate>
+												</PaymentCard>
+												<Associations>
+													<Group>
+														<Name>Enrique</Name>
+														<PassengerCount>1</PassengerCount>
+														<Contacts>
+															<Contact>
+																<EmailContact>
+																	<Address>[EMAILPAYER]</Address>
+																</EmailContact>
+															</Contact>
+														</Contacts>
+													</Group>
+												</Associations>
+											</Payment>
+											[SERVICEFEE]
+										</Payments>',
+								'YES_MASHERY_CC_ORDERCHANGE_v16'	:	'	<Payments>
+											<Payment>
+												<Method>
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>iteggo enrique</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>Leganitos 21</Street>
+															<CityName>MAD</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<EffectiveExpireDate>
+															<Expiration>0521</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<Name>
+														<Surname>ItegGo</Surname>
+														<Given>Enrique</Given>
+														<Title>MR</Title>
+													</Name>
+													<Contacts>
+														<Contact>
+															<PhoneContact>
+																<Number>646666621</Number>
+															</PhoneContact>
+														</Contact>
+														<Contact>
+															<EmailContact>
+																<Address>[EMAILPAYER]</Address>
+															</EmailContact>
+														</Contact>
+													</Contacts>
+												</Payer>
+											</Payment>
+										</Payments>'
+							} ]]></con:value></con:property><con:property><con:name>lst_payments_v17</con:name><con:value><![CDATA[	{	'CASH_ORDERCREATE_v17'			:	'	<Payments>
+											<Payment>
+												<Type>CA</Type>
+												<Method>
+													<Cash CashInd="true"/>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+											[SERVICEFEE]
+										</Payments>',
+								'CASH_ORDERCHANGE_v17'			:	'	<Payments>
+											<Payment>
+												<Type>CA</Type>
+												<Method>
+													<Cash CashInd="true"/>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>          					
+										</Payments>',
+								'NO_MASHERY_CC_ORDERCREATE_v17'	:	'	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>250</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+										</Payments>',
+								'NO_MASHERY_CC_ORDERCHANGE_v17'	:	'	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>250</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<MaskedCardNumber>[MASKEDCREDITCARD]</MaskedCardNumber>
+														<EffectiveExpireDate>
+															<Expiration>1219</Expiration>
+														</EffectiveExpireDate>
+														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+										</Payments>',
+								'YES_MASHERY_CC_ORDERCREATE_v17'	:	'	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<EffectiveExpireDate>
+															<Expiration>0521</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>
+											[SERVICEFEE]
+										</Payments>',
+								'YES_MASHERY_CC_ORDERCHANGE_v17'	:	'	<Payments>
+											<Payment>
+												<Type>CC</Type>
+												<Method>
+													<!--Internal use with tokenized card-->
+													<PaymentCard>
+														<CardType>[CARDTYPE]</CardType>
+														<SeriesCode>491</SeriesCode>
+														<CardHolderName>Dinel Garcia Garcia</CardHolderName>
+														<CardHolderBillingAddress>
+															<Street>ibiza 21</Street>
+															<CityName>MA</CityName>
+															<StateProv>28</StateProv>
+															<PostalCode>28900</PostalCode>
+															<CountryCode>ES</CountryCode>
+														</CardHolderBillingAddress>
+														<CardNumber>[CARDNUM]</CardNumber>
+														<EffectiveExpireDate>
+															<Expiration>0521</Expiration>
+														</EffectiveExpireDate>
+													</PaymentCard>
+												</Method>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
+												<Payer>
+													<ContactInfoRefs>Payer</ContactInfoRefs>
+												</Payer>
+											</Payment>               				
+										</Payments>'
+							} ]]></con:value></con:property><con:property><con:name>**                     LST_Endpoints</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_v17_UAT_MASHERY_YES</con:name><con:value> {
 									  "AirShopping"	: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/AirShopping/17.2/v1"
 									, "OfferPrice"		: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/OfferPrice/17.2/v1"
 									, "OrderCreate"	: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/OrderCreate/17.2/v1"
