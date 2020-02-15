@@ -1463,34 +1463,27 @@ class LIB_OrderCreateXMLs {
 
 			//Devuelve XML del Payments
 	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceToPay, 
-					 emailPayer, cardNum, cardType, lst_payments, maskedCreditCard, 
+					 emailPayer, cardNum, cardType, TestSteps, maskedCreditCard, 
 					 tokenizedCreditCard, serviceFee_XML ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getPayments_XML'	
 
 		def payments_XML		= ''
-		def json				= new JsonSlurper()		
-		def paymentSelected		= ''
-		def paymentSelected_XML	= ''
-		logger.info lst_payments.toString()
-		lst_payments			= json.parseText(lst_payments)
-		logger.info "002"
-		if ( 'CASH' == paymentMethod_order ) {
-			paymentSelected	= "CASH_ORDERCREATE_v$version"
-		} else {
-			paymentSelected	= "${mashery}_MASHERY_CC_ORDERCREATE_v$version"
-		}
-		logger.info "001"
-		paymentSelected_XML	= lst_payments.find() { it.key.equals(paymentSelected) }
-
-		paymentSelected_XML	= paymentSelected_XML	.replace( '[CURRENCY]'	, currency 		)
-											.replace( '[AMOUNT]'	, totalPriceToPay 	)
-											.replace( '[CARDTYPE]'	, cardType	 	)
-											.replace( '[CARDNUM]'	, cardNum	 		)
-											.replace( '[EMAILPAYER]'	, emailPayer 		)
-											.replace( '[SERVICEFEE]'	, serviceFee_XML 	)
-											.replace( '[MASKEDCREDITCARD]'	, maskedCreditCard 		)
-											.replace( '[TOKENIZEDCREDITCARD]'	, tokenizedCreditCard 	)	
 		
+		if ( 'CASH' == paymentMethod_order ) {
+			payments_XML	= TestSteps.getPropertyValue("CASH_ORDERCREATE_v$version")
+		} else {
+			payments_XML	= TestSteps.getPropertyValue("${mashery}_MASHERY_CC_ORDERCREATE_v$version")
+		}
+
+		payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
+								.replace( '[AMOUNT]'			, totalPriceToPay 		)
+								.replace( '[CARDTYPE]'			, cardType	 		)
+								.replace( '[CARDNUM]'			, cardNum	 			)
+								.replace( '[EMAILPAYER]'			, emailPayer 			)
+								.replace( '[SERVICEFEE]'			, serviceFee_XML 		)
+								.replace( '[MASKEDCREDITCARD]'	, maskedCreditCard 		)
+								.replace( '[TOKENIZEDCREDITCARD]'	, tokenizedCreditCard 	)
+								
 		return payments_XML
 	}
 }
@@ -2201,35 +2194,13 @@ testRunner.testCase.setPropertyValue ( 'lst_childs'	, lst_childs.toString()	)
 testRunner.testCase.setPropertyValue ( 'lst_infants'	, lst_infants.toString() )
 
 log.info " **LST_PaxData ha sido actualizada."]]></script></con:config></con:testStep><con:testStep type="groovy" name="LST_Payments" id="867aed6d-83a3-4211-b29f-8a14d0cb10ac" disabled="true"><con:settings/><con:config><script><![CDATA[
-def lst_payments_v16	= 	"""	{	"CASH_ORDERCREATE_v16"			:	"[CASH_ORDERCREATE_v16]",
-								"CASH_AIRDOCISSUE_v16"			:	"[CASH_AIRDOCISSUE_v16]",
-								"CASH_ORDERCHANGE_v16"			:	"[CASH_ORDERCHANGE_v16]",
-								"NO_MASHERY_CC_ORDERCREATE_v16"	:	"[NO_MASHERY_CC_ORDERCREATE_v16]",
-								"NO_MASHERY_CC_AIRDOCISSUE_v16"	:	"[NO_MASHERY_CC_AIRDOCISSUE_v16]",
-								"NO_MASHERY_CC_ORDERCHANGE_v16"	:	"[NO_MASHERY_CC_ORDERCHANGE_v16]",
-								"YES_MASHERY_CC_ORDERCREATE_v16"	:	"[YES_MASHERY_CC_ORDERCREATE_v16]",
-								"YES_MASHERY_CC_AIRDOCISSUE_v16"	:	"[YES_MASHERY_CC_AIRDOCISSUE_v16]",
-								"YES_MASHERY_CC_ORDERCHANGE_v16"	:	"[YES_MASHERY_CC_ORDERCHANGE_v16]"
-							} """
-
-def lst_payments_v17	= 	"""	{	"CASH_ORDERCREATE_v17"			:	"[CASH_ORDERCREATE_v17]",
-								"CASH_ORDERCHANGE_v17"			:	"[CASH_ORDERCHANGE_v17]",
-								"NO_MASHERY_CC_ORDERCREATE_v17"	:	"[NO_MASHERY_CC_ORDERCREATE_v17]",
-								"NO_MASHERY_CC_ORDERCHANGE_v17"	:	"[NO_MASHERY_CC_ORDERCHANGE_v17]",
-								"YES_MASHERY_CC_ORDERCREATE_v17"	:	"[YES_MASHERY_CC_ORDERCREATE_v17]",
-								"YES_MASHERY_CC_ORDERCHANGE_v17"	:	"[YES_MASHERY_CC_ORDERCHANGE_v17]"
-							} """
-
-
-
-//XMLs -------
 	//VERSION 16
 def CASH_ORDERCREATE_v16				= 	"""	<Payments>
 											<Payment>
 												<Method>
 													<Cash/>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<Name>
 														<Surname>Perez Perez</Surname>
@@ -2257,7 +2228,7 @@ def CASH_AIRDOCISSUE_v16		=	"""	<Payments>
 										<Type>
 											<Code>CA</Code>
 										</Type>
-										<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+										<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 										<Cash/>
 									</Payment>
 									[SERVICEFEE]
@@ -2268,7 +2239,7 @@ def CASH_ORDERCHANGE_v16		=	"""	<Payments>
 										<Method>
 											<Cash/>
 										</Method>
-										<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+										<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 										<Payer>
 											<Name>
 												<Surname>Perez Perez</Surname>
@@ -2311,7 +2282,7 @@ def NO_MASHERY_CC_ORDERCREATE_v16		=	"""	<Payments>
 														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<Name>
 														<Surname>Garcia Garcia</Surname>
@@ -2339,7 +2310,7 @@ def NO_MASHERY_CC_AIRDOCISSUE_v16		=	"""	<Payments>
 												<Type>
 													<Code>CC</Code>
 												</Type>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<PaymentCard>
 													<CardType>[CARDTYPE]</CardType>
 													<SeriesCode>123</SeriesCode>
@@ -2382,7 +2353,7 @@ def YES_MASHERY_CC_ORDERCREATE_v16		=	"""	<Payments>
 														</EffectiveExpireDate>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<Name>
 														<Surname>ItegGo</Surname>
@@ -2411,7 +2382,7 @@ def YES_MASHERY_CC_AIRDOCISSUE_v16 	=	"""	<Payments>
 												<Type>
 													<Code>CC</Code>
 												</Type>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<PaymentCard>
 													<CardType>[CARDTYPE]</CardType>
 													<CardNumber>[CARDNUM]</CardNumber>
@@ -2465,7 +2436,7 @@ def YES_MASHERY_CC_ORDERCHANGE_v16		=	"""	<Payments>
 														</EffectiveExpireDate>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<Name>
 														<Surname>ItegGo</Surname>
@@ -2493,9 +2464,9 @@ def CASH_ORDERCREATE_v17				=	"""	<Payments>
 											<Payment>
 												<Type>CA</Type>
 												<Method>
-													<Cash CashInd=\"true\"/>
+													<Cash CashInd="true"/>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
@@ -2507,9 +2478,9 @@ def CASH_ORDERCHANGE_v17				=	"""	<Payments>
 											<Payment>
 												<Type>CA</Type>
 												<Method>
-													<Cash CashInd=\"true\"/>
+													<Cash CashInd="true"/>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
@@ -2539,7 +2510,7 @@ def NO_MASHERY_CC_ORDERCREATE_v17		=	"""	<Payments>
 														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
@@ -2569,7 +2540,7 @@ def NO_MASHERY_CC_ORDERCHANGE_v17		=	"""	<Payments>
 														<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[TOTALAMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[TOTALAMOUNT]</Amount>
 												<Payer>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
@@ -2598,7 +2569,7 @@ def YES_MASHERY_CC_ORDERCREATE_v17		=	"""	<Payments>
 														</EffectiveExpireDate>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
@@ -2628,7 +2599,7 @@ def YES_MASHERY_CC_ORDERCHANGE_v17		=	"""	<Payments>
 														</EffectiveExpireDate>
 													</PaymentCard>
 												</Method>
-												<Amount Code=\"[CURRENCY]\">[AMOUNT]</Amount>
+												<Amount Code="[CURRENCY]">[AMOUNT]</Amount>
 												<Payer>
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
@@ -2638,25 +2609,21 @@ def YES_MASHERY_CC_ORDERCHANGE_v17		=	"""	<Payments>
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-lst_payments_v16	= lst_payments_v16	.replace( "[CASH_ORDERCREATE_v16]"				, CASH_ORDERCREATE_v16 			)
-								.replace( "[CASH_AIRDOCISSUE_v16]"				, CASH_AIRDOCISSUE_v16 			)
-								.replace( "[CASH_ORDERCHANGE_v16]"				, CASH_ORDERCHANGE_v16 			)
-								.replace( "[NO_MASHERY_CC_ORDERCREATE_v16]"		, NO_MASHERY_CC_ORDERCREATE_v16 	)
-								.replace( "[NO_MASHERY_CC_AIRDOCISSUE_v16]"		, NO_MASHERY_CC_AIRDOCISSUE_v16 	)
-								.replace( "[NO_MASHERY_CC_ORDERCHANGE_v16]"		, NO_MASHERY_CC_ORDERCHANGE_v16 	)
-								.replace( "[YES_MASHERY_CC_ORDERCREATE_v16]"		, YES_MASHERY_CC_ORDERCREATE_v16 	)
-								.replace( "[YES_MASHERY_CC_AIRDOCISSUE_v16]"		, YES_MASHERY_CC_AIRDOCISSUE_v16 	)
-								.replace( "[YES_MASHERY_CC_ORDERCHANGE_v16]"		, YES_MASHERY_CC_ORDERCHANGE_v16 	)
-
-lst_payments_v17	= lst_payments_v17	.replace( "[CASH_ORDERCREATE_v17]"				, CASH_ORDERCREATE_v17 			)
-								.replace( "[CASH_ORDERCHANGE_v17]"				, CASH_ORDERCHANGE_v17 			)
-								.replace( "[NO_MASHERY_CC_ORDERCREATE_v17]"		, NO_MASHERY_CC_ORDERCREATE_v17 	)
-								.replace( "[NO_MASHERY_CC_ORDERCHANGE_v17]"		, NO_MASHERY_CC_ORDERCHANGE_v17 	)
-								.replace( "[YES_MASHERY_CC_ORDERCREATE_v17]"		, YES_MASHERY_CC_ORDERCREATE_v17 	)
-								.replace( "[YES_MASHERY_CC_ORDERCHANGE_v17]"		, YES_MASHERY_CC_ORDERCHANGE_v17 	)
-
-testRunner.testCase.setPropertyValue ( "lst_payments_v16"	, lst_payments_v16 )
-testRunner.testCase.setPropertyValue ( "lst_payments_v17"	, lst_payments_v17 )]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### OTHERS ####" id="f8c8774d-e2e1-4d13-b99e-5048f67bc056" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="Ex: Call to functions" id="136f2be4-d691-44c2-96ee-92104391bcbd" disabled="true"><con:settings/><con:config><script>/*************************************************************************
+testRunner.testCase.setPropertyValue ( "CASH_ORDERCREATE_v16"			, CASH_ORDERCREATE_v16 			)
+testRunner.testCase.setPropertyValue ( "CASH_AIRDOCISSUE_v16"			, CASH_AIRDOCISSUE_v16 			)
+testRunner.testCase.setPropertyValue ( "CASH_ORDERCHANGE_v16"			, CASH_ORDERCHANGE_v16 			)
+testRunner.testCase.setPropertyValue ( "NO_MASHERY_CC_ORDERCREATE_v16"	, NO_MASHERY_CC_ORDERCREATE_v16	)
+testRunner.testCase.setPropertyValue ( "NO_MASHERY_CC_AIRDOCISSUE_v16"	, NO_MASHERY_CC_AIRDOCISSUE_v16 	)
+testRunner.testCase.setPropertyValue ( "NO_MASHERY_CC_ORDERCHANGE_v16"	, NO_MASHERY_CC_ORDERCHANGE_v16 	)
+testRunner.testCase.setPropertyValue ( "YES_MASHERY_CC_ORDERCREATE_v16"	, YES_MASHERY_CC_ORDERCREATE_v16 	)
+testRunner.testCase.setPropertyValue ( "YES_MASHERY_CC_AIRDOCISSUE_v16"	, YES_MASHERY_CC_AIRDOCISSUE_v16 	)
+testRunner.testCase.setPropertyValue ( "YES_MASHERY_CC_ORDERCHANGE_v16"	, YES_MASHERY_CC_ORDERCHANGE_v16 	)
+testRunner.testCase.setPropertyValue ( "CASH_ORDERCREATE_v17"			, CASH_ORDERCREATE_v17 			)
+testRunner.testCase.setPropertyValue ( "CASH_ORDERCHANGE_v17"			, CASH_ORDERCHANGE_v17 			)
+testRunner.testCase.setPropertyValue ( "NO_MASHERY_CC_ORDERCREATE_v17"	, NO_MASHERY_CC_ORDERCREATE_v17 	)
+testRunner.testCase.setPropertyValue ( "NO_MASHERY_CC_ORDERCHANGE_v17"	, NO_MASHERY_CC_ORDERCHANGE_v17 	)
+testRunner.testCase.setPropertyValue ( "YES_MASHERY_CC_ORDERCREATE_v17"	, YES_MASHERY_CC_ORDERCREATE_v17 	)
+testRunner.testCase.setPropertyValue ( "YES_MASHERY_CC_ORDERCHANGE_v17"	, YES_MASHERY_CC_ORDERCHANGE_v17 	)]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### OTHERS ####" id="f8c8774d-e2e1-4d13-b99e-5048f67bc056" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="Ex: Call to functions" id="136f2be4-d691-44c2-96ee-92104391bcbd" disabled="true"><con:settings/><con:config><script>/*************************************************************************
  * 	Ejemplo de cómo empezar una librería	
  */
 
@@ -2932,7 +2899,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 								, FOID_Number		: '32641593Q'
 								, FOID_Type		: 'NI'
 								, ContactInfoRef	: 'ADULT_01_CONTACT'
-							}]</con:value></con:property><con:property><con:name>**                     LST_Payments</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_payments_v16</con:name><con:value><![CDATA[	{	"CASH_ORDERCREATE_v16"			:	"	<Payments>
+							}]</con:value></con:property><con:property><con:name>**                     LST_Payments</con:name><con:value>**</con:value></con:property><con:property><con:name>CASH_ORDERCREATE_v16</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Method>
 													<Cash/>
@@ -2958,8 +2925,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 												</Payer>
 											</Payment>
 											[SERVICEFEE]
-								           </Payments>",
-								"CASH_AIRDOCISSUE_v16"			:	"	<Payments>
+								           </Payments>]]></con:value></con:property><con:property><con:name>CASH_AIRDOCISSUE_v16</con:name><con:value><![CDATA[	<Payments>
 									<Payment>
 										<Type>
 											<Code>CA</Code>
@@ -2968,8 +2934,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 										<Cash/>
 									</Payment>
 									[SERVICEFEE]
-								</Payments>",
-								"CASH_ORDERCHANGE_v16"			:	"	<Payments>
+								</Payments>]]></con:value></con:property><con:property><con:name>CASH_ORDERCHANGE_v16</con:name><con:value><![CDATA[	<Payments>
 									<Payment>
 										<Method>
 											<Cash/>
@@ -2994,8 +2959,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 											</Contacts>
 										</Payer>
 									</Payment>
-								</Payments>",
-								"NO_MASHERY_CC_ORDERCREATE_v16"	:	"	<Payments>
+								</Payments>]]></con:value></con:property><con:property><con:name>NO_MASHERY_CC_ORDERCREATE_v16</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Method>
 													<PaymentCard>
@@ -3037,8 +3001,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													</Contacts>
 												</Payer>
 											</Payment>
-										</Payments>",
-								"NO_MASHERY_CC_AIRDOCISSUE_v16"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>NO_MASHERY_CC_AIRDOCISSUE_v16</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>
 													<Code>CC</Code>
@@ -3062,9 +3025,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													<TokenizedCardNumber>[TOKENIZEDCREDITCARD]</TokenizedCardNumber>
 												</PaymentCard>
 											</Payment>
-										</Payments>",
-								"NO_MASHERY_CC_ORDERCHANGE_v16"	:	"	",
-								"YES_MASHERY_CC_ORDERCREATE_v16"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>NO_MASHERY_CC_ORDERCHANGE_v16</con:name><con:value>	</con:value></con:property><con:property><con:name>YES_MASHERY_CC_ORDERCREATE_v16</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Method>
 													<PaymentCard>
@@ -3106,8 +3067,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 												</Payer>
 											</Payment>
 				               				[SERVICEFEE]
-										</Payments>",
-								"YES_MASHERY_CC_AIRDOCISSUE_v16"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>YES_MASHERY_CC_AIRDOCISSUE_v16</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>
 													<Code>CC</Code>
@@ -3144,8 +3104,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 												</Associations>
 											</Payment>
 											[SERVICEFEE]
-										</Payments>",
-								"YES_MASHERY_CC_ORDERCHANGE_v16"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>YES_MASHERY_CC_ORDERCHANGE_v16</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Method>
 													<PaymentCard>
@@ -3186,8 +3145,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													</Contacts>
 												</Payer>
 											</Payment>
-										</Payments>"
-							} ]]></con:value></con:property><con:property><con:name>lst_payments_v17</con:name><con:value><![CDATA[	{	"CASH_ORDERCREATE_v17"			:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>CASH_ORDERCREATE_v17</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>CA</Type>
 												<Method>
@@ -3199,8 +3157,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 												</Payer>
 											</Payment>
 											[SERVICEFEE]
-										</Payments>",
-								"CASH_ORDERCHANGE_v17"			:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>CASH_ORDERCHANGE_v17</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>CA</Type>
 												<Method>
@@ -3211,8 +3168,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
 											</Payment>          					
-										</Payments>",
-								"NO_MASHERY_CC_ORDERCREATE_v17"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>NO_MASHERY_CC_ORDERCREATE_v17</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>CC</Type>
 												<Method>
@@ -3240,8 +3196,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
 											</Payment>
-										</Payments>",
-								"NO_MASHERY_CC_ORDERCHANGE_v17"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>NO_MASHERY_CC_ORDERCHANGE_v17</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>CC</Type>
 												<Method>
@@ -3269,8 +3224,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
 											</Payment>
-										</Payments>",
-								"YES_MASHERY_CC_ORDERCREATE_v17"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>YES_MASHERY_CC_ORDERCREATE_v17</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>CC</Type>
 												<Method>
@@ -3298,8 +3252,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 												</Payer>
 											</Payment>
 											[SERVICEFEE]
-										</Payments>",
-								"YES_MASHERY_CC_ORDERCHANGE_v17"	:	"	<Payments>
+										</Payments>]]></con:value></con:property><con:property><con:name>YES_MASHERY_CC_ORDERCHANGE_v17</con:name><con:value><![CDATA[	<Payments>
 											<Payment>
 												<Type>CC</Type>
 												<Method>
@@ -3326,8 +3279,7 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 													<ContactInfoRefs>Payer</ContactInfoRefs>
 												</Payer>
 											</Payment>               				
-										</Payments>"
-							} ]]></con:value></con:property><con:property><con:name>**                     LST_Endpoints</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_v17_UAT_MASHERY_YES</con:name><con:value> {
+										</Payments>]]></con:value></con:property><con:property><con:name>**                     LST_Endpoints</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_v17_UAT_MASHERY_YES</con:name><con:value> {
 									  "AirShopping"	: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/AirShopping/17.2/v1"
 									, "OfferPrice"		: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/OfferPrice/17.2/v1"
 									, "OrderCreate"	: "https://test.api.iberia.com/iberia/[ENVIRONMENT]/ndc/OrderCreate/17.2/v1"
