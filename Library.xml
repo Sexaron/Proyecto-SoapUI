@@ -1314,6 +1314,7 @@ context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log)
  *		- getOrder_XML
  *		- getServiceFee_XML
  *		- getPayments_XML
+ *		- getDataList_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1351,7 +1352,32 @@ class LIB_OrderCreateXMLs {
 									<PassengerReference>[TAGS]</PassengerReference>
 								</Passengers>
 							</Associations>
-						</Payment>"""							
+						</Payment>"""
+
+	def dataList_XML	= """	<DataLists>
+								<PassengerList>
+									[PASSENGERLIST]
+								</PassengerList>
+								[CONTACTLIST]
+							</DataLists>"""
+
+	def passenger_XML	= """	<Passenger PassengerID="[PAX]">
+								<PTC>[PTC]</PTC>
+								<Birthdate>[BIRTHDATE]</Birthdate>
+								<Individual IndividualID="[INDPAX]">
+									<Gender>[GENDER]</Gender>
+									<NameTitle>[NAMETITLE]</NameTitle>
+									<GivenName>[GIVENNAME]</GivenName>
+									<Surname>[SURNAME]</Surname>
+								</Individual>
+								<FOID>
+									<FOID_Number>[FOIDNUMBER]</FOID_Number>
+									<FOID_Type>[FOIDTYPE]</FOID_Type>
+								</FOID>
+								[IDENTITYDOCUMENT]								
+								<ContactInfoRef>[CONTACTINFOREF]</ContactInfoRef>
+								[REMARK]								
+							</Passenger>"""
 
 	def public testRunner, context, logger
 
@@ -1485,6 +1511,11 @@ class LIB_OrderCreateXMLs {
 								.replace( '[TOKENIZEDCREDITCARD]'	, tokenizedCreditCard 	)
 								
 		return payments_XML
+	}
+
+			//Devuelve XML del DataList
+	def getDataList_XML( nADT, nCHD, nINF ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getDataList_XML'		
 	}
 }
 
@@ -1973,7 +2004,7 @@ def lst_infants	= []
 
 lst_adults << (Adult_01	= """{	  Birthdate		: '1978-10-23'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'UNO'
 							, FOID_Number		: '30000529L'
@@ -1983,7 +2014,7 @@ lst_adults << (Adult_01	= """{	  Birthdate		: '1978-10-23'
 
 lst_adults << (Adult_02	=	"""{	  Birthdate		: '1975-09-03'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'DOS'
 							, FOID_Number		: '47226285V'
@@ -1993,7 +2024,7 @@ lst_adults << (Adult_02	=	"""{	  Birthdate		: '1975-09-03'
 
 lst_adults << (Adult_03	=	"""{	  Birthdate		: '1981-08-11'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'TRES'
 							, FOID_Number		: '94592883R'
@@ -2003,7 +2034,7 @@ lst_adults << (Adult_03	=	"""{	  Birthdate		: '1981-08-11'
 
 lst_adults << (Adult_04	=	"""{	  Birthdate		: '1977-12-10'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'CUATRO'
 							, FOID_Number		: '74149838T'
@@ -2013,7 +2044,7 @@ lst_adults << (Adult_04	=	"""{	  Birthdate		: '1977-12-10'
 
 lst_adults << (Adult_05	=	"""{	  Birthdate		: '1981-08-23'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'CINCO'
 							, FOID_Number		: '84204183X'
@@ -2023,7 +2054,7 @@ lst_adults << (Adult_05	=	"""{	  Birthdate		: '1981-08-23'
 
 lst_adults << (Adult_06	=	"""{	  Birthdate		: '1974-11-25'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'SEIS'
 							, FOID_Number		: '95727579S'
@@ -2033,7 +2064,7 @@ lst_adults << (Adult_06	=	"""{	  Birthdate		: '1974-11-25'
 
 lst_adults << (Adult_07	=	"""{	  Birthdate		: '1985-12-01'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'SIETE'
 							, FOID_Number		: '80907758Z'
@@ -2043,7 +2074,7 @@ lst_adults << (Adult_07	=	"""{	  Birthdate		: '1985-12-01'
 
 lst_adults << (Adult_08	=	"""{	  Birthdate		: '1988-02-01'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'OCHO'
 							, FOID_Number		: '82854094K'
@@ -2053,7 +2084,7 @@ lst_adults << (Adult_08	=	"""{	  Birthdate		: '1988-02-01'
 
 lst_adults << (Adult_09	=	"""{	  Birthdate		: '1985-02-06'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'ADULTO'
 							, Surname			: 'NUEVE'
 							, FOID_Number		: '50346577Z'
@@ -2067,7 +2098,7 @@ lst_adults << (Adult_09	=	"""{	  Birthdate		: '1985-02-06'
 	
 lst_childs << (Child_01	=	"""{	  Birthdate		: '2013-10-15'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'CHILD'
 							, Surname			: 'UNO'
 							, FOID_Number		: '76133309C'
@@ -2077,7 +2108,7 @@ lst_childs << (Child_01	=	"""{	  Birthdate		: '2013-10-15'
 						
 lst_childs << (Child_02	=	"""{	  Birthdate		: '2012-10-15'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'CHILD'
 							, Surname			: 'DOS'
 							, FOID_Number		: '18635359T'
@@ -2087,7 +2118,7 @@ lst_childs << (Child_02	=	"""{	  Birthdate		: '2012-10-15'
 							
 lst_childs << (Child_03	=	"""{	  Birthdate		: '2012-05-08'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'CHILD'
 							, Surname			: 'TRES'
 							, FOID_Number		: '68745232A'
@@ -2097,7 +2128,7 @@ lst_childs << (Child_03	=	"""{	  Birthdate		: '2012-05-08'
 							
 lst_childs << (Child_04	=	"""{	  Birthdate		: '2013-01-15'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'CHILD'
 							, Surname			: 'CUATRO'
 							, FOID_Number		: '16322317E'
@@ -2107,7 +2138,7 @@ lst_childs << (Child_04	=	"""{	  Birthdate		: '2013-01-15'
 							
 lst_childs << (Child_05	=	"""{	  Birthdate		: '2010-11-18'
 							, Gender			: 'Male'
-							, NameTilte		: 'MR'
+							, NameTitle		: 'MR'
 							, GivenName		: 'CHILD'
 							, Surname			: 'CINCO'
 							, FOID_Number		: '58198063J'
@@ -2117,7 +2148,7 @@ lst_childs << (Child_05	=	"""{	  Birthdate		: '2010-11-18'
 							
 lst_childs << (Child_06	=	"""{	  Birthdate		: '2013-04-28'
 							, Gender			: 'Female'
-							, NameTilte		: 'MRS'
+							, NameTitle		: 'MRS'
 							, GivenName		: 'CHILD'
 							, Surname			: 'SEIS'
 							, FOID_Number		: '40701474F'
@@ -2131,7 +2162,7 @@ lst_childs << (Child_06	=	"""{	  Birthdate		: '2013-04-28'
 
 lst_infants << (Infant_01	=	"""{	  Birthdate		: '2018-06-12'
 								, Gender			: 'Male'
-								, NameTilte		: 'MR'
+								, NameTitle		: 'MR'
 								, GivenName		: 'INFANT'
 								, Surname			: 'UNO'
 								, FOID_Number		: '30000056Y'
@@ -2141,7 +2172,7 @@ lst_infants << (Infant_01	=	"""{	  Birthdate		: '2018-06-12'
 
 lst_infants << (Infant_02	=	"""{	  Birthdate		: '2013-10-15'
 								, Gender			: 'Female'
-								, NameTilte		: 'MRS'
+								, NameTitle		: 'MRS'
 								, GivenName		: 'INFANT'
 								, Surname			: 'DOS'
 								, FOID_Number		: '65686673F'
@@ -2151,7 +2182,7 @@ lst_infants << (Infant_02	=	"""{	  Birthdate		: '2013-10-15'
 
 lst_infants << (Infant_03	=	"""{	  Birthdate		: '2018-09-01'
 								, Gender			: 'Male'
-								, NameTilte		: 'MR'
+								, NameTitle		: 'MR'
 								, GivenName		: 'INFANT'
 								, Surname			: 'TRES'
 								, FOID_Number		: '12311926A'
@@ -2161,7 +2192,7 @@ lst_infants << (Infant_03	=	"""{	  Birthdate		: '2018-09-01'
 
 lst_infants << (Infant_04	=	"""{	  Birthdate		: '2019-01-22'
 								, Gender			: 'Female'
-								, NameTilte		: 'MRS'
+								, NameTitle		: 'MRS'
 								, GivenName		: 'INFANT'
 								, Surname			: 'CUATRO'
 								, FOID_Number		: '52015719T'
@@ -2171,7 +2202,7 @@ lst_infants << (Infant_04	=	"""{	  Birthdate		: '2019-01-22'
 
 lst_infants << (Infant_05	=	"""{	  Birthdate		: '2018-11-18'
 								, Gender			: 'Male'
-								, NameTilte		: 'MR'
+								, NameTitle		: 'MR'
 								, GivenName		: 'INFANT'
 								, Surname			: 'CINCO'
 								, FOID_Number		: '23903629M'
@@ -2181,7 +2212,7 @@ lst_infants << (Infant_05	=	"""{	  Birthdate		: '2018-11-18'
 
 lst_infants << (Infant_06	=	"""{	  Birthdate		: '2018-09-22'
 								, Gender			: 'Female'
-								, NameTilte		: 'MRS'
+								, NameTitle		: 'MRS'
 								, GivenName		: 'INFANT'
 								, Surname			: 'SEIS'
 								, FOID_Number		: '32641593Q'
