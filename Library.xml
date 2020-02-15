@@ -1379,6 +1379,49 @@ class LIB_OrderCreateXMLs {
 								[REMARK]								
 							</Passenger>"""
 
+	def identityDocument_XML	= """	<IdentityDocument>
+									<IdentityDocumentNumber>[DOCNUM]</IdentityDocumentNumber>
+									<IdentityDocumentType>[TYPE]</IdentityDocumentType>
+								</IdentityDocument>"""
+
+	def remark_XML			= """	<Remark>
+									<Remark>[REMARKCODE]</Remark>
+								</Remark>"""
+
+	def contactList_XML	= """	<ContactList>
+								<ContactInformation ContactID="ADULT_01_CONTACT">
+									<ContactType/>
+									<ContactProvided>
+										<EmailAddress>
+											<EmailAddressValue>[EMAIL]</EmailAddressValue>
+										</EmailAddress>
+									</ContactProvided>
+									<ContactProvided>
+										<Phone>
+											<Label>Passenger</Label>
+											<PhoneNumber>+34666554433</PhoneNumber>
+										</Phone>
+										<Phone>
+											<Label>Emergency</Label>
+											<PhoneNumber>34666554433</PhoneNumber>
+										</Phone>
+									</ContactProvided>
+									<Individual>
+										<GivenName>CONTACTO</GivenName>
+										<Surname>EMERGENCIA</Surname>
+									</Individual>
+								</ContactInformation>
+								<ContactInformation ContactID="Payer">
+									<ContactType>Payer</ContactType>
+									<ContactProvided>
+										<EmailAddress>
+											<EmailAddressValue>[EMAILPAYER]</EmailAddressValue>
+										</EmailAddress>
+									</ContactProvided>
+									<IndividualRef>IND_ADULT_01</IndividualRef>
+								</ContactInformation>
+							</ContactList>"""							
+
 	def public testRunner, context, logger
 
 	def LIB_OrderCreateXMLs ( whichTestRunner, whichContext, whichLogger ){
@@ -1514,8 +1557,24 @@ class LIB_OrderCreateXMLs {
 	}
 
 			//Devuelve XML del DataList
-	def getDataList_XML( nADT, nCHD, nINF ) {
-		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getDataList_XML'		
+	def getDataList_XML( 	nADT, nCHD, nINF, lst_adults, lst_childs, lst_infants,
+						residentDisc, largeFamilyDisc ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getDataList_XML'
+		
+		def json	= new JsonSlurper()
+
+		lst	= json.parseText(lst_adults) //para continuar.......
+		
+	}
+
+			//Devuelve XML de remark para el passenger_XML
+	def getRemark_XML() {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getRemark_XML'
+	}
+	
+			//Devuelve XML de identityDocument para el passenger_XML
+	def getIdentityDocument_XML() {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getIdentityDocument_XML'
 	}
 }
 
