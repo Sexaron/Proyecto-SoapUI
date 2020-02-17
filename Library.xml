@@ -1315,6 +1315,8 @@ context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log)
  *		- getServiceFee_XML
  *		- getPayments_XML
  *		- getDataList_XML
+ *		- getIdentityDocument_XML
+ *		- getRemark_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1558,7 +1560,7 @@ class LIB_OrderCreateXMLs {
 
 			//Devuelve XML del DataList
 	def getDataList_XML( 	nADT, nCHD, nINF, lst_adults, lst_childs, lst_infants,
-						residentDisc, largeFamilyDisc ) {
+						residentDisc, largeFamilyDisc, email, emailPayer ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getDataList_XML'
 		
 		def json	= new JsonSlurper()
@@ -1569,33 +1571,118 @@ class LIB_OrderCreateXMLs {
 		def passengerLst_XML	= ''
 		def string_PAX			= ''
 		def string_indPAX		= ''
-		
-		(0..(nADT.toInteger()-1)).each(){
-			string_PAX	= 'ADULT_0' + (it+1).toString()
-			string_indPAX	= 'IND_ADULT_0' + (it+1).toString()
-			logger.info string_PAX
-			passengerLst_XML	= passengerLst_XML + passenger_XML	.replace(	'[PAX]'			, string_PAX						)
-														.replace( '[PTC]'			, 'ADT'							)
-														.replace( '[BIRTHDATE]'		, json_lst_adults[it].Birthdate		)
-														.replace( '[INDPAX]'		, string_indPAX					)
-														.replace( '[GENDER]'		, json_lst_adults[it].Gender			)
-														.replace( '[NAMETITLE]'		, json_lst_adults[it].NameTitle		)
-														.replace( '[GIVENNAME]'		, json_lst_adults[it].GivenName		)
-														.replace( '[SURNAME]'		, json_lst_adults[it].Surname			)
-														.replace( '[FOIDNUMBER]'		, json_lst_adults[it].FOID_Number		)
-														.replace( '[FOIDTYPE]'		, json_lst_adults[it].FOID_Type		)
-														.replace( '[CONTACTINFOREF]'	, json_lst_adults[it].ContactInfoRef	)
 
-			if ( 'NO' != residentDisc && '' != residentDisc && 'NO' != largeFamilyDisc && '' != largeFamilyDisc ) {
-				passengerLst_XML	= getIdentityDocument_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
-				passengerLst_XML	= getRemark_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
-			} else {
-				
+			//ADULT
+		if ( 0 < nADT.toInteger() ) {			
+			(0..(nADT.toInteger()-1)).each(){
+				string_PAX	= 'ADULT_0' + (it+1).toString()
+				string_indPAX	= 'IND_ADULT_0' + (it+1).toString()
+				passengerLst_XML	= passengerLst_XML + passenger_XML	.replace(	'[PAX]'			, string_PAX						)
+															.replace( '[PTC]'			, 'ADT'							)
+															.replace( '[BIRTHDATE]'		, json_lst_adults[it].Birthdate		)
+															.replace( '[INDPAX]'		, string_indPAX					)
+															.replace( '[GENDER]'		, json_lst_adults[it].Gender			)
+															.replace( '[NAMETITLE]'		, json_lst_adults[it].NameTitle		)
+															.replace( '[GIVENNAME]'		, json_lst_adults[it].GivenName		)
+															.replace( '[SURNAME]'		, json_lst_adults[it].Surname			)
+															.replace( '[FOIDNUMBER]'		, json_lst_adults[it].FOID_Number		)
+															.replace( '[FOIDTYPE]'		, json_lst_adults[it].FOID_Type		)
+															.replace( '[CONTACTINFOREF]'	, json_lst_adults[it].ContactInfoRef	)
+	
+				if ( ('NO' != residentDisc && '' != residentDisc) || ('NO' != largeFamilyDisc && '' != largeFamilyDisc) ) {
+					passengerLst_XML	= getIdentityDocument_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
+					passengerLst_XML	= getRemark_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
+				} else {
+					passengerLst_XML	= passengerLst_XML.replace( '[IDENTITYDOCUMENT]'	, ''	)
+					passengerLst_XML	= passengerLst_XML.replace( '[REMARK]'			, ''	)
+				}
 			}
-
-			logger.info passengerLst_XML
 		}
 		
+			//CHILD
+		if ( 0 < nCHD.toInteger() ) {
+			(0..(nCHD.toInteger()-1)).each(){
+				string_PAX	= 'CHILD_0' + (it+1).toString()
+				string_indPAX	= 'IND_CHILD_0' + (it+1).toString()
+				passengerLst_XML	= passengerLst_XML + passenger_XML	.replace(	'[PAX]'			, string_PAX						)
+															.replace( '[PTC]'			, 'CHD'							)
+															.replace( '[BIRTHDATE]'		, json_lst_childs[it].Birthdate		)
+															.replace( '[INDPAX]'		, string_indPAX					)
+															.replace( '[GENDER]'		, json_lst_childs[it].Gender			)
+															.replace( '[NAMETITLE]'		, json_lst_childs[it].NameTitle		)
+															.replace( '[GIVENNAME]'		, json_lst_childs[it].GivenName		)
+															.replace( '[SURNAME]'		, json_lst_childs[it].Surname			)
+															.replace( '[FOIDNUMBER]'		, json_lst_childs[it].FOID_Number		)
+															.replace( '[FOIDTYPE]'		, json_lst_childs[it].FOID_Type		)
+															.replace( '[CONTACTINFOREF]'	, json_lst_childs[it].ContactInfoRef	)
+	
+				if ( ('NO' != residentDisc && '' != residentDisc) || ('NO' != largeFamilyDisc && '' != largeFamilyDisc) ) {
+					passengerLst_XML	= getIdentityDocument_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
+					passengerLst_XML	= getRemark_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
+				} else {
+					passengerLst_XML	= passengerLst_XML.replace( '[IDENTITYDOCUMENT]'	, ''	)
+					passengerLst_XML	= passengerLst_XML.replace( '[REMARK]'			, ''	)
+				}
+			}
+		}
+		
+			//INFANT
+		if ( 0 < nINF.toInteger() ) {
+			(0..(nINF.toInteger()-1)).each(){
+				string_PAX	= 'INFANT_0' + (it+1).toString()
+				string_indPAX	= 'IND_INFANT_0' + (it+1).toString()
+				passengerLst_XML	= passengerLst_XML + passenger_XML	.replace(	'[PAX]'			, string_PAX						)
+															.replace( '[PTC]'			, 'INF'							)
+															.replace( '[BIRTHDATE]'		, json_lst_infants[it].Birthdate		)
+															.replace( '[INDPAX]'		, string_indPAX					)
+															.replace( '[GENDER]'		, json_lst_infants[it].Gender			)
+															.replace( '[NAMETITLE]'		, json_lst_infants[it].NameTitle		)
+															.replace( '[GIVENNAME]'		, json_lst_infants[it].GivenName		)
+															.replace( '[SURNAME]'		, json_lst_infants[it].Surname		)
+															.replace( '[FOIDNUMBER]'		, json_lst_infants[it].FOID_Number		)
+															.replace( '[FOIDTYPE]'		, json_lst_infants[it].FOID_Type		)
+															.replace( '[CONTACTINFOREF]'	, json_lst_infants[it].ContactInfoRef	)
+	
+				if ( ('NO' != residentDisc && '' != residentDisc) || ('NO' != largeFamilyDisc && '' != largeFamilyDisc) ) {
+					passengerLst_XML	= getIdentityDocument_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
+					passengerLst_XML	= getRemark_XML( residentDisc, largeFamilyDisc, passengerLst_XML )
+				} else {
+					passengerLst_XML	= passengerLst_XML.replace( '[IDENTITYDOCUMENT]'	, ''	)
+					passengerLst_XML	= passengerLst_XML.replace( '[REMARK]'			, ''	)
+				}
+			}
+		}
+
+		contactList_XML	= contactList_XML	.replace( '[EMAIL]'			, email			)
+										.replace( '[EMAILPAYER]'		, emailPayer		)
+										
+		dataList_XML		= dataList_XML		.replace( '[PASSENGERLIST]'	, passengerLst_XML	)
+										.replace( '[CONTACTLIST]'	, contactList_XML	)
+	}
+	
+			//Devuelve XML de identityDocument para el passenger_XML
+	def getIdentityDocument_XML( residentDisc, largeFamilyDisc, passengerLst_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getIdentityDocument_XML'
+
+		def identityDoc_residents	= "12313123111"
+		def identityDoc_largFamily	= "123131414143"
+		def identityDocument		= ''
+
+		if ( 'NO' != residentDisc && '' != residentDisc ) {
+			identityDocument	= identityDocument_XML	.replace( '[DOCNUM]'	, identityDoc_residents	)
+												.replace( '[TYPE]'		, 'F1'				)
+		} else {
+			identityDocument	= ''
+		}
+
+		if ( 'NO' != largeFamilyDisc && '' != largeFamilyDisc ) {
+			identityDocument	= identityDocument + identityDocument_XML	.replace( '[DOCNUM]'	, identityDoc_largFamily	)
+																.replace( '[TYPE]'		, 'AI'				)
+		}
+		
+		passengerLst_XML	= passengerLst_XML.replace( '[IDENTITYDOCUMENT]'	, identityDocument	)
+		
+		return passengerLst_XML
 	}
 
 			//Devuelve XML de remark para el passenger_XML
@@ -1606,23 +1693,38 @@ class LIB_OrderCreateXMLs {
 		def BP_code = 'RESIDENT-070099'
 		def RM_code = 'RESIDENT-520018'
 		def LF_code = 'LARGEFAMILY-060830'
-		def identityDocument	= ''
+		def remark  = ''
 
 		if ( 'NO' != residentDisc && '' != residentDisc ) {
-			identityDocument	= 
+			switch (residentDisc) {
+				case 'RC':
+					remark	= remark_XML	.replace( '[REMARKCODE]'	, RC_code	)
+					break
+				case 'BP':
+					remark	= remark_XML	.replace( '[REMARKCODE]'	, BP_code	)
+					break
+				case 'RM':
+					remark	= remark_XML	.replace( '[REMARKCODE]'	, RM_code	)
+					break
+				default:
+					context.getTestRunner().fail("  ERROR: descuento de residentes no válido. Comprobar el valor del parámetro 'residentDiscount'" )
+					break
+			}
 		} else {
-			identityDocument
+			remark	= ''
 		}
-			
-		return passengerLst_XML
-	}
-	
-			//Devuelve XML de identityDocument para el passenger_XML
-	def getIdentityDocument_XML( residentDisc, largeFamilyDisc, passengerLst_XML ) {
-		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getIdentityDocument_XML'
 
-		def identityDoc_residents	= "12313123111"
-		def identityDoc_largFamily	= "123131414143"
+		if ( 'NO' != largeFamilyDisc && '' != largeFamilyDisc ) {
+			if ( 'F1' == largeFamilyDisc || 'F2' == largeFamilyDisc ) {
+				remark	= remark + remark_XML	.replace( '[REMARKCODE]'	, LF_code	)	
+			} else {
+				context.getTestRunner().fail("  ERROR: descuento de familia numerosa no válido. Comprobar el valor del parámetro 'largeFamilyDiscount'" )
+			}
+		}
+
+		passengerLst_XML	= passengerLst_XML.replace( '[REMARK]'	, remark	)
+		
+		return passengerLst_XML
 	}
 }
 
@@ -2802,252 +2904,7 @@ Lib_xxxxx.run( testRunner, context)
 final ss = context.cntx_XXXX
 
 frase = ss.write("prueba")
-return "ok"</script></con:config></con:testStep><con:testStep type="groovy" name="Groovy Script" id="4f123ffe-171b-41c9-947f-8cd173692607"><con:settings/><con:config><script><![CDATA[ /*
- * Datos de todos los posibles pasajeros para una reserva.
- * Datos de 9 adultos.
- * Datos de 6 childs.
- * Datos de 6 infants.
- * 
- * 
- * Mejoras:
- * 		Añadir una variable random para los cumpleaños, que siempre cumpla los límites para ser ADULTO, CHILD o INFANT
- */
-
-//Birthdate, Gender, NameTitle, GivenName, Surname, Foid_Number, Foid_Type, ContactIntoRef
-import groovy.json.JsonSlurper
-
-def lst_adults		= []
-def lst_childs		= []
-def lst_infants	= [:]
-
-	//@@@@@@@@ LISTA DE ADULTS
-
-lst_adults <<  """{	  "Birthdate"		: "1975-09-02"
-							, "Gender"			: "Female"
-							, "NameTitle"		: "MRS"
-							, "GivenName"		: "ADULTO"
-							, "Surname"			: "DOS"
-							, "FOID_Number"		: "47226285V"
-							, "FOID_Type"		: "NI"
-							, "ContactInfoRef"	: "ADULT_01_CONTACT"
-			}"""
-
-lst_adults << 	"""{	  				"Birthdate"		: "1975-09-03"
-							, "Gender"			: "Female"
-							, "NameTitle"		: "MRS"
-							, "GivenName"		: "ADULTO"
-							, "Surname"			: "DOS"
-							, "FOID_Number"		: "47226285V"
-							, "FOID_Type"		: "NI"
-							, "ContactInfoRef"	: "ADULT_01_CONTACT"
-						}"""
-
-							//log.info lst_infants
-							//log.info lst_infants[1]
-							json	= new JsonSlurper()
-							log.info lst_adults[1]
-							lst	= json.parseText(lst_adults[0])
-							log.info lst.Birthdate
-
-/*lst_adults << (Adult_03	=	"""{	  Birthdate		: "1981-08-11"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "ADULTO"
-							, Surname			: "TRES"
-							, FOID_Number		: "94592883R"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-lst_adults << (Adult_04	=	"""{	  Birthdate		: "1977-12-10"
-							, Gender			: "Female"
-							, NameTitle		: "MRS"
-							, GivenName		: "ADULTO"
-							, Surname			: "CUATRO"
-							, FOID_Number		: "74149838T"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-lst_adults << (Adult_05	=	"""{	  Birthdate		: "1981-08-23"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "ADULTO"
-							, Surname			: "CINCO"
-							, FOID_Number		: "84204183X"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-lst_adults << (Adult_06	=	"""{	  Birthdate		: "1974-11-25"
-							, Gender			: "Female"
-							, NameTitle		: "MRS"
-							, GivenName		: "ADULTO"
-							, Surname			: "SEIS"
-							, FOID_Number		: "95727579S"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")	
-
-lst_adults << (Adult_07	=	"""{	  Birthdate		: "1985-12-01"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "ADULTO"
-							, Surname			: "SIETE"
-							, FOID_Number		: "80907758Z"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-lst_adults << (Adult_08	=	"""{	  Birthdate		: "1988-02-01"
-							, Gender			: "Female"
-							, NameTitle		: "MRS"
-							, GivenName		: "ADULTO"
-							, Surname			: "OCHO"
-							, FOID_Number		: "82854094K"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-lst_adults << (Adult_09	=	"""{	  Birthdate		: "1985-02-06"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "ADULTO"
-							, Surname			: "NUEVE"
-							, FOID_Number		: "50346577Z"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-
-							
-	//@@@@@@@@ LISTA DE CHILDS
-	
-lst_childs << (Child_01	=	"""{	  Birthdate		: "2013-10-15"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "CHILD"
-							, Surname			: "UNO"
-							, FOID_Number		: "76133309C"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")	
-						
-lst_childs << (Child_02	=	"""{	  Birthdate		: "2012-10-15"
-							, Gender			: "Female"
-							, NameTitle		: "MRS"
-							, GivenName		: "CHILD"
-							, Surname			: "DOS"
-							, FOID_Number		: "18635359T"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-							
-lst_childs << (Child_03	=	"""{	  Birthdate		: "2012-05-08"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "CHILD"
-							, Surname			: "TRES"
-							, FOID_Number		: "68745232A"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-							
-lst_childs << (Child_04	=	"""{	  Birthdate		: "2013-01-15"
-							, Gender			: "Female"
-							, NameTitle		: "MRS"
-							, GivenName		: "CHILD"
-							, Surname			: "CUATRO"
-							, FOID_Number		: "16322317E"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-							
-lst_childs << (Child_05	=	"""{	  Birthdate		: "2010-11-18"
-							, Gender			: "Male"
-							, NameTitle		: "MR"
-							, GivenName		: "CHILD"
-							, Surname			: "CINCO"
-							, FOID_Number		: "58198063J"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-							
-lst_childs << (Child_06	=	"""{	  Birthdate		: "2013-04-28"
-							, Gender			: "Female"
-							, NameTitle		: "MRS"
-							, GivenName		: "CHILD"
-							, Surname			: "SEIS"
-							, FOID_Number		: "40701474F"
-							, FOID_Type		: "NI"
-							, ContactInfoRef	: "ADULT_01_CONTACT"
-						}""")
-
-
-					
-	//@@@@@@@@ LISTA DE INFANTS
-
-lst_infants << (Infant_01	=	"""{	  Birthdate		: "2018-06-12"
-								, Gender			: "Male"
-								, NameTitle		: "MR"
-								, GivenName		: "INFANT"
-								, Surname			: "UNO"
-								, FOID_Number		: "30000056Y"
-								, FOID_Type		: "NI"
-								, ContactInfoRef	: "ADULT_01_CONTACT"
-							}""")
-
-lst_infants << (Infant_02	=	"""{	  Birthdate		: "2013-10-15"
-								, Gender			: "Female"
-								, NameTitle		: "MRS"
-								, GivenName		: "INFANT"
-								, Surname			: "DOS"
-								, FOID_Number		: "65686673F"
-								, FOID_Type		: "NI"
-								, ContactInfoRef	: "ADULT_01_CONTACT"
-							}""")
-
-lst_infants << (Infant_03	=	"""{	  Birthdate		: "2018-09-01"
-								, Gender			: "Male"
-								, NameTitle		: "MR"
-								, GivenName		: "INFANT"
-								, Surname			: "TRES"
-								, FOID_Number		: "12311926A"
-								, FOID_Type		: "NI"
-								, ContactInfoRef	: "ADULT_01_CONTACT"
-							}""")
-
-lst_infants << (Infant_04	=	"""{	  Birthdate		: "2019-01-22"
-								, Gender			: "Female"
-								, NameTitle		: "MRS"
-								, GivenName		: "INFANT"
-								, Surname			: "CUATRO"
-								, FOID_Number		: "52015719T"
-								, FOID_Type		: "NI"
-								, ContactInfoRef	: "ADULT_01_CONTACT"
-							}""")
-
-lst_infants << (Infant_05	=	"""{	  Birthdate		: "2018-11-18"
-								, Gender			: "Male"
-								, NameTitle		: "MR"
-								, GivenName		: "INFANT"
-								, Surname			: "CINCO"
-								, FOID_Number		: "23903629M"
-								, FOID_Type		: "NI"
-								, ContactInfoRef	: "ADULT_01_CONTACT"
-							}""")
-
-lst_infants << (Infant_06	=	"""{	  Birthdate		: "2018-09-22"
-								, Gender			: "Female"
-								, NameTitle		: "MRS"
-								, GivenName		: "INFANT"
-								, Surname			: "SEIS"
-								, FOID_Number		: "32641593Q"
-								, FOID_Type		: "NI"
-								, ContactInfoRef	: "ADULT_01_CONTACT"
-							}""")*/
-
-]]></script></con:config></con:testStep><con:properties><con:property><con:name>*                       LISTS</con:name><con:value>*</con:value></con:property><con:property><con:name>**                     LST_IATAs</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_masheryUserName_BETA</con:name><con:value> {
+return "ok"</script></con:config></con:testStep><con:properties><con:property><con:name>*                       LISTS</con:name><con:value>*</con:value></con:property><con:property><con:name>**                     LST_IATAs</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_masheryUserName_BETA</con:name><con:value> {
 									  "0000002"	: "ibreptestagg"
 									, "00000022"	: "ibreptestagg"
 									, "0000010"	: "jrtechnologies"
