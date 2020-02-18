@@ -674,6 +674,8 @@ context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]
  *		- setDataFromOfferID
  *		- gettingOfferItemsFromOfferPrice
  *		- getOfferID
+ *		- getPNR
+ *		- getTickets
  */
  
 import groovy.json.JsonSlurper
@@ -713,7 +715,9 @@ class Lib_GettingDataFromOfferID {
 						'taxesPricePerINF'		: 'N/A',
 					]
 		def priceClassLst	= []
+		def segmentRefLst	= []
 		def segmentLst		= []
+		def flightNumLst	= []
 		
 		def offer = rs.OffersGroup.AirlineOffers.Offer.find() {
 			it.@OfferID.toString().equals(offerID)
@@ -725,7 +729,7 @@ class Lib_GettingDataFromOfferID {
 		
 		offer.OfferItem[0].FareDetail.FareComponent.each() {
 			priceClassLst	<< it.PriceClassRef
-			segmentLst	<< it.SegmentRefs.toString().split(' ')
+			segmentRefLst	<< it.SegmentRefs.toString().split(' ')
 		}
 
 		if ( numADTs != '0' ) {
@@ -767,9 +771,20 @@ class Lib_GettingDataFromOfferID {
 		data.each(){
 			testRunner.testCase.setPropertyValue( it.key.toString(), it.value.toString() )
 		}
+
+		def auxLst = segmentRefLst.toString() 	.replace(', '	, ',')
+										.replace('['	, ''	)
+										.replace(']'	, ''	)
+										
+		auxLst.split(',').each() {
+			segmentLst	<< it.substring(2,14)
+			flightNumLst	<< it.substring(2,6)
+		}
 		
 		testRunner.testCase.setPropertyValue( 'priceClassLst', priceClassLst.toString().replace('[', '').replace(']','') )
-		testRunner.testCase.setPropertyValue( 'segmentLst', segmentLst.toString().replace('[', '').replace(']','') )
+		testRunner.testCase.setPropertyValue( 'segmentRefLst', segmentRefLst.toString().replace('[', '').replace(']','') )
+		testRunner.testCase.setPropertyValue( 'segmentLst'   , segmentLst.toString().replace('[', '').replace(']','') )
+		testRunner.testCase.setPropertyValue( 'flightNumLst'   , flightNumLst.toString().replace('[', '').replace(']','') )
 	}
 
 	def getOfferItemsFromOfferPrice ( nADT, nCHD, nINF, rs ) {
@@ -815,6 +830,29 @@ class Lib_GettingDataFromOfferID {
 		def offer = rs.PricedOffer.@OfferID.toString()
 		return offer
 	}
+
+	def getPNR ( rs )  {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getPNR'
+
+		def PNR = rs.Response.Order.BookingReferences.BookingReference.ID
+		return PNR.toString()
+	}
+
+	def getTickets ( rs )  {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getTickets'
+
+		def tickets	= []
+		
+		rs.Response.TicketDocInfos.TicketDocInfo.each(){
+			if ( it.TicketDocument.Type.toString() == 'T' ) { 
+				tickets << it.TicketDocument.TicketDocNbr 
+			}
+		}
+
+		tickets	= tickets.toString().replace('[', '')
+								.replace(']', '')
+		return tickets
+	}	
 }
 
 final objName	= "cntx_GDFO"
