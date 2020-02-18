@@ -782,6 +782,7 @@ class Lib_GettingDataFromOfferID {
 		
 		if ( nADT != '0' && nADT != 'NO' && nADT != '' ) {
 			offerItemID_ADT_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			assert offerItemID_ADT_OfferPrice != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
 			nItem++
 		} else {
 			offerItemID_ADT_OfferPrice	= 'N/A'
@@ -789,6 +790,7 @@ class Lib_GettingDataFromOfferID {
 
 		if ( nCHD != '0' && nCHD != 'NO' && nCHD != '' ) {
 			offerItemID_CHD_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			assert offerItemID_CHD_OfferPrice != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
 			nItem++
 		} else {
 			offerItemID_CHD_OfferPrice	= 'N/A'
@@ -796,6 +798,7 @@ class Lib_GettingDataFromOfferID {
 		
 		if ( nINF != '0' && nINF != 'NO' && nINF != '' ) {
 			offerItemID_INF_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			assert offerItemID_INF_OfferPrice != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
 		} else {
 			offerItemID_INF_OfferPrice	= 'N/A'
 		}
@@ -1317,6 +1320,7 @@ context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log)
  *		- getDataList_XML
  *		- getIdentityDocument_XML
  *		- getRemark_XML
+ *		- getQueryOrderCreate_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1435,7 +1439,7 @@ class LIB_OrderCreateXMLs {
 		//Devuelve XML de Query
 	def getOrder_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, offerID, rsID ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getOrder_XML'
-
+		
 		def tags 		= ''
 		def offerItems	= ''
 		
@@ -1476,8 +1480,8 @@ class LIB_OrderCreateXMLs {
 
 		order_XML	= order_XML.replace("[OFFERID]"	, offerID		)
 						 .replace("[RESPONSEID]"	, rsID		)
-						 .replace("[OFFERITEMS]"	, offerItems	)		
-			
+						 .replace("[OFFERITEMS]"	, offerItems	)
+						 
 		return order_XML
 	}
 
@@ -1725,6 +1729,17 @@ class LIB_OrderCreateXMLs {
 		passengerLst_XML	= passengerLst_XML.replace( '[REMARK]'	, remark	)
 		
 		return passengerLst_XML
+	}
+
+		//Devuelve XML del getQueryOrderCreate_XML
+	def getQueryOrderCreate_XML( order_XML, payments_XML, dataLists_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getQueryOrderCreate_XML'
+		
+		query_XML	= query_XML	.replace( '[ORDER]'		, order_XML		)
+							.replace( '[PAYMENTS]'	, payments_XML		)
+							.replace( '[DATALISTS]'	, dataLists_XML	)
+
+		return query_XML
 	}
 }
 
