@@ -205,7 +205,7 @@ class Lib_SettingUpData {
 			key	= it.key
 			it 	= it.value.toString().replace('[ENVIRONMENT]', environment.toLowerCase() )
 			testRunner.testCase.setPropertyValue( key, it.value.toString() )
-			logger.info " Service: $key. Endpoint: ${it.value} "
+			//logger.info " Service: $key. Endpoint: ${it.value} "
 		}		
 	}
 
