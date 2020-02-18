@@ -851,6 +851,11 @@ class Lib_GettingDataFromOfferID {
 
 		tickets	= tickets.toString().replace('[', '')
 								.replace(']', '')
+
+		if ( tickets == '' ) {
+			tickets = 'N/A'
+		}
+		
 		return tickets
 	}	
 }
