@@ -73,7 +73,7 @@ class LIB_SeveralFunctions {
 	}
 	
 	def getPreviousStepName() {
-		logger.info ':: RUNNING -> //Libs/Lib_Several Functions/get_previousStepName'
+		logger.info ':: RUNNING -> //Libs/Lib_Several Functions/getPreviousStepName'
 		
 		currentStepInd = context.currentStepIndex
 		previousStep = testRunner.testCase.getTestStepAt(currentStepInd - 1)
@@ -81,6 +81,8 @@ class LIB_SeveralFunctions {
 	}
 
 	def getDates( numSegments, date ) {
+		logger.info ':: RUNNING -> //Libs/Lib_Several Functions/getDates'
+		
 		def arrayDates	= []
 		def newDate	= new Date()
 		def random	= new Random()
@@ -138,6 +140,8 @@ class LIB_SeveralFunctions {
 	}
 
 	def removeProperties () {
+		logger.info ':: RUNNING -> //Libs/Lib_Several Functions/removeProperties'
+		
 		for( prop in context.testCase.testSuite.project.properties) {
 		   context.testCase.testSuite.project.removeProperty( prop.value.name )
 		}
