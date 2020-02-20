@@ -1408,18 +1408,21 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 	}
 
 		//Devuelve XML del offer de maletas
-	def getBagsOffer_XML( rs, responseID, orderID, nADT, nCHD, nINF, bags, segmentLst, segmentLstV2 ) {
+	def getBagsOffer_XML( rs, responseID, orderID, nADT, nCHD, bags, segmentLstV2 ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getBagsOffer_XML'
 		
 		def bagsOffer_XML	= ''
 		def offersBaggage_xml	= ''
 		def bagsAmount		= 0.00
-		def random		= new Random()
+		def bagPrice		= 0.00
 		def item			= ''
 		def numRoutes		= segmentLstV2.toString().split('],').size()
-		def totalSegment	= segmentLst.size()
 		bags				= bags.split(',')
 
+		segmentLstV2		= segmentLstV2	.replace( '[' , '' )
+									.replace( ']]', '' )
+		segmentLstV2		= segmentLstV2.split('], ')
+		
 		assert rs.Body.ServiceListRS.ALaCarteOffer.size() > 0 : 'No hay disponible servicios de maleta'
 		
 		def offers		= rs.Body.ServiceListRS.ALaCarteOffer
@@ -1436,7 +1439,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 				if ( optSelected == "firstsvc" )	{	optSelected = "1" }
 				else 						{	optSelected = it.toString() }
 				
-				def auxSegment	= segmentLstV2[idx][0]
+				def auxSegment	= segmentLstV2[idx].substring(0,14)
 				
 				for ( int i = 0; i < nADT.toInteger(); i++ ){
 					def adult	= "ADULT_0" + (i+1)
@@ -1458,10 +1461,10 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 																.replace("[TAG]", adult)
 				}
 	
-				for ( int i = 0; i < num_chd.toInteger(); i++ ){
-					child	= "CHILD_0" + (i+1)
-					offerItem	= ""
-					offerCHD	= ""
+				for ( int i = 0; i < nCHD.toInteger(); i++ ){
+					def child	= "CHILD_0" + (i+1)
+					def offerItem	= ""
+					def offerCHD	= ""
 					
 					offers.ALaCarteOfferItem.each(){ offer ->
 						if (	offer.Eligibility.PassengerRefs.toString().contains(child.toString()) && 
@@ -1482,7 +1485,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 			idx++
 		}
 		
-		bagsOffer_XML = offerAnc_XML	.replace("[OFFER]"		, offerBaggage		)
+		bagsOffer_XML = offerAnc_XML	.replace("[OFFER]"		, orderID			)
 								.replace("[RESPONSEID]"	, responseID		)
 								.replace("[OFFERSANC]"	, offersBaggage_xml	)		
 		
