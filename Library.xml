@@ -779,7 +779,7 @@ class Lib_GettingDataFromOfferID {
 										.replace(']'	, ''	)
 										
 		auxLst.split(',').each() {
-			segmentLst	<< it.substring(2,14)
+			segmentLst	<< it.substring(0,14)
 			flightNumLst	<< it.substring(2,6)
 		}
 		
@@ -787,6 +787,18 @@ class Lib_GettingDataFromOfferID {
 		testRunner.testCase.setPropertyValue( 'segmentRefLst', segmentRefLst.toString().replace('[', '').replace(']','') )
 		testRunner.testCase.setPropertyValue( 'segmentLst'   , segmentLst.toString().replace('[', '').replace(']','') )
 		testRunner.testCase.setPropertyValue( 'flightNumLst'   , flightNumLst.toString().replace('[', '').replace(']','') )
+	}
+
+	def getSegmentLstV2	( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getSegmentLstV2'
+
+		def flightList			= rs.DataLists.FlightList
+		def segmentReference	= []
+		flightList.Flight.each {
+			segmentReference	<< it.SegmentReferences.toString().split(' ')
+		}
+
+		return segmentReference.toString()
 	}
 
 	def getOfferItemsFromOfferPrice ( nADT, nCHD, nINF, rs ) {
@@ -1357,6 +1369,139 @@ class LIB_OfferPriceXMLs {
 
 final objName	= "cntx_OPXML"
 context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log) )
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Ancillaries XMLs" id="4e92bfb1-9111-4982-ba6f-e4d602896be5" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+ *	XML:
+ *		- 
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_AncillariesXMLs {
+	
+	//XMLs							
+def offerAnc_XML	= """	<Offer OfferID="[OFFER]" Owner="IB" ResponseID="[RESPONSEID]">
+							[OFFERSANC]
+						</Offer>"""
+
+def offerItem_XML	= """	<OfferItem OfferItemID="[OFFERITEM]">
+                     			<PassengerRefs>[TAG]</PassengerRefs>
+                  			</OfferItem>"""
+
+def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
+							<PassengerRefs>[TAG]</PassengerRefs>
+							<ALaCarteSelection>
+								<Quantity>1</Quantity>
+								<SegmentID>[SEGMENT]</SegmentID>
+							</ALaCarteSelection>
+							<SeatSelection>
+								<Row>[ROW]</Row>
+								<Column>[COLUMN]</Column>
+							</SeatSelection>
+						</OfferItem>"""
+						
+	def public testRunner, context, logger
+
+	def LIB_AncillariesXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+
+		//Devuelve XML del offer de maletas
+	def getBagsOffer_XML( rs, responseID, orderID, nADT, nCHD, nINF, bags, segmentLst, segmentLstV2 ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getBagsOffer_XML'
+		
+		def bagsOffer_XML	= ''
+		def offersBaggage_xml	= ''
+		def bagsAmount		= 0.00
+		def random		= new Random()
+		def item			= ''
+		def numRoutes		= segmentLstV2.toString().split('],').size()
+		def totalSegment	= segmentLst.size()
+		bags				= bags.split(',')
+
+		assert rs.Body.ServiceListRS.ALaCarteOffer.size() > 0 : 'No hay disponible servicios de maleta'
+		
+		def offers		= rs.Body.ServiceListRS.ALaCarteOffer
+		def offerIDBaggage	= offers.@OfferID.toString()
+		def idx			= 0
+		
+		bags.each {				
+			if ( it != "NO") {
+				
+				assert bags.size() == numRoutes, 'ERROR: El numero de rutas no coincide con el número de valores dado en la propiedad \'anc_bags\'.' 
+				
+				def optSelected = it.toString()
+				
+				if ( optSelected == "firstsvc" )	{	optSelected = "1" }
+				else 						{	optSelected = it.toString() }
+				
+				def auxSegment	= segmentLstV2[idx][0]
+				
+				for ( int i = 0; i < nADT.toInteger(); i++ ){
+					def adult	= "ADULT_0" + (i+1)
+					def offerItem	= ""
+					def offerADT	= ""
+					offers.ALaCarteOfferItem.each { offer ->
+						if (	offer.Eligibility.PassengerRefs.toString().contains(adult.toString()) && 
+							offer.Eligibility.SegmentRefs.toString().contains(auxSegment.toString()) &&
+							offer.Service.ServiceDefinitionRef.toString().contains(optSelected.toString()) ) {
+								offerADT 		= offer.@OfferItemID.toString()
+								bagPrice		= Double.parseDouble(offer.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toString())
+								bagsAmount 	= bagsAmount + bagPrice
+						}
+					}	
+					
+					assert offerADT != '', "ERROR: Pasajero: $adult / Segmento: [$idx]$auxSegment -> No se ha encontrado servicio de maleta"
+					
+					offersBaggage_xml = offersBaggage_xml + offerItem_XML	.replace("[OFFERITEM]", offerADT)
+																.replace("[TAG]", adult)
+				}
+	
+				for ( int i = 0; i < num_chd.toInteger(); i++ ){
+					child	= "CHILD_0" + (i+1)
+					offerItem	= ""
+					offerCHD	= ""
+					
+					offers.ALaCarteOfferItem.each(){ offer ->
+						if (	offer.Eligibility.PassengerRefs.toString().contains(child.toString()) && 
+							offer.Eligibility.SegmentRefs.toString().contains(auxSegment.toString()) &&
+							offer.Service.ServiceDefinitionRef.toString().contains(optSelected.toString()) ) {
+								offerCHD = offer.@OfferItemID.toString()							
+								bagPrice		= Double.parseDouble(offer.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toString())
+								bagsAmount 	= bagsAmount + bagPrice
+						}
+					}
+
+					assert offerCHD != '', "ERROR: Pasajero: $child / Segmento: [$idx]$auxSegment -> No se ha encontrado servicio de maleta"
+					
+					offersBaggage_xml = offersBaggage_xml + offerItem_XML	.replace("[OFFERITEM]", offerCHD)
+																.replace("[TAG]", child)
+				}																		     
+			}
+			idx++
+		}
+		
+		bagsOffer_XML = offerAnc_XML	.replace("[OFFER]"		, offerBaggage		)
+								.replace("[RESPONSEID]"	, responseID		)
+								.replace("[OFFERSANC]"	, offersBaggage_xml	)		
+		
+		return [ bagsOffer_XML, bagsAmount.toString() ]
+	}
+
+		//Devuelve XML del offer de asientos
+	def getSeatsOffer_XML( rs, responseID, orderID, nADT, nCHD, nINF, seats, seat_code, segmentLst, citiesLst ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML'
+
+		def seatsOffer_XML 		= "PRUEBA"
+		def seatsOfferItem_XML 	= "PRUEBA"
+		def seatsAmount		= 0.00
+		return [ seatsOffer_XML, seatsOfferItem_XML, seatsAmount.toString() ]
+	}
+}
+
+final objName	= "cntx_AXML"
+context.setProperty( objName, new LIB_AncillariesXMLs ( testRunner, context, log) )
 ]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderCreate XMLs" id="a1324941-43a4-4b49-98ca-a2b61a733d9c" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getOrder_XML
