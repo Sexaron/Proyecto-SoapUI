@@ -1371,7 +1371,8 @@ final objName	= "cntx_OPXML"
 context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log) )
 ]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Ancillaries XMLs" id="4e92bfb1-9111-4982-ba6f-e4d602896be5" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
- *		- 
+ *		- getBagsOffer_XML
+ *		- getSeatsOffer_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1493,12 +1494,49 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 	}
 
 		//Devuelve XML del offer de asientos
-	def getSeatsOffer_XML( rs, responseID, orderID, nADT, nCHD, nINF, seats, seat_code, segmentLst, citiesLst ) {
+	def getSeatsOffer_XML( rs, responseID, orderID, nADT, nCHD, seats, seat_code, 
+						segmentLst, segmentLstV2 ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML'
 
 		def seatsOffer_XML 		= "PRUEBA"
 		def seatsOfferItem_XML 	= "PRUEBA"
 		def seatsAmount		= 0.00
+		def lstADT			= []
+		def lstCHD			= []
+		def segmentsWithSeat	= []
+		
+		(1..nADT.toInteger()).each() { 
+			lstADT << 'ADULT_0' + it
+		}
+
+		(1..nCHD.toInteger()).each() { 
+			lstCHD << 'CHILD_0' + it
+		}
+
+			//Para saber el número de rutas con solo segmentLstV2
+		segmentLstV2		= segmentLstV2	.replace( '[' , '' )
+									.replace( ']]', '' )
+		segmentLstV2		= segmentLstV2.split('], ')
+		def numRoutes		= segmentLstV2.size()
+			/////////////////////////////////////////////////////
+			
+		seats	= seats.split(',')
+
+			//Se crea lista con los segmentos que llevaran asientos
+		if ( seats.size() == numRoutes ) { 
+			segmentLstV2.each() {
+				segmentsWithSeat	<< it.substring(0,14)
+			}			
+		} else {
+			segmentsWithSeat	= segmentLst.split(', ')
+		}
+			///////////////////////////////////////////////////////
+
+		logger.info segmentsWithSeat.toString()
+		
+	
+
+		
 		return [ seatsOffer_XML, seatsOfferItem_XML, seatsAmount.toString() ]
 	}
 }
