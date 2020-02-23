@@ -1498,19 +1498,21 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 						segmentLst, segmentLstV2 ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML'
 
+		assert rs.Body.SeatAvailabilityRS.ALaCarteOffer.size() > 0, "ERROR: NO hay servicios de asientos disponibles"
+		
 		def seatsOffer_XML 		= "PRUEBA"
 		def seatsOfferItem_XML 	= "PRUEBA"
 		def seatsAmount		= 0.00
-		def lstADT			= []
-		def lstCHD			= []
+		def lstPAX			= []
 		def segmentsWithSeat	= []
+
 		
 		(1..nADT.toInteger()).each() { 
-			lstADT << 'ADULT_0' + it
+			lstPAX << 'ADULT_0' + it
 		}
 
 		(1..nCHD.toInteger()).each() { 
-			lstCHD << 'CHILD_0' + it
+			lstPAX << 'CHILD_0' + it
 		}
 
 			//Para saber el número de rutas con solo segmentLstV2
@@ -1522,7 +1524,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 			
 		seats	= seats.split(',')
 
-			//Se crea lista con los segmentos que llevaran asientos
+			//Se crea lista con los segmentos que llevarán asientos
 		if ( seats.size() == numRoutes ) { 
 			segmentLstV2.each() {
 				segmentsWithSeat	<< it.substring(0,14)
@@ -1532,12 +1534,140 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 		}
 			///////////////////////////////////////////////////////
 
-		logger.info segmentsWithSeat.toString()
-		
-	
+		def auxService		= ''
+		def validOfferItems	= []
+		def validSeats		= []
+		def seatsSelected	= []
+		def seatSelected	= ''
+		def auxPrice		= 0.00
 
+		segmentsWithSeat.eachWithIndex() { segm, idx ->
+			def optionSeleced	= seats[idx].toString().toUpperCase()
+			if( optionSeleced == 'PAY' || optionSeleced == 'PAGO' || optionSeleced == 'P' ) {
+				lstPAX.each() { pax ->
+					rs.Body.SeatAvailabilityRS.ALaCarteOffer.ALaCarteOfferItem.each(){
+						if (	it.Eligibility.PassengerRefs.toString().contains(pax) 	&&
+							it.Eligibility.SegmentRefs.toString().equals(segm)	&&
+							it.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toDouble() > 0.00 ) {
+								validOfferItems	<< it.@OfferItemID.toString()
+						}
+					}
+					
+					validSeats	= getSeats( rs, validOfferItems, pax, segm, seat_code, idx )
+					seatSelected	= getSeat( validSeats, seatsSelected, pax, segm, idx )
+					seatsSelected	<< seatSelected
+					def aLaCarteOfferItem	= getALaCarteOfferItem ( rs, pax, segm, seatSelected )
+					seatsOfferItem_XML	= getSeatsOfferItemXML( rs, seatsOfferItem_XML, aLaCarteOfferItem, pax, segm, seatSelected )
+					//Aqui iría creando el XML correspondiente para el offerItem y offer
+				}				
+			} else if ( optionSeleced == 'FREE' || optionSeleced == 'GRATIS' || optionSeleced == 'F' || optionSeleced == 'G' ) {
+				
+			} else if ( optionSeleced == 'ANY' || optionSeleced == 'CUALQUIERA' || optionSeleced == 'A' || optionSeleced == 'C' ) {
+				
+			} else {
+				
+			}
+		}
 		
 		return [ seatsOffer_XML, seatsOfferItem_XML, seatsAmount.toString() ]
+	}
+
+		//Obtenemos asientos validos en función del pasajero y el segmento
+	def getSeats( rs, validOfferItems, pax, segm, seat_code, idx ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML/getSeats'
+		
+		assert validOfferItems.size() > 0, "ERROR: Pasajero: $pax / Segmento: [$idx]$segm -> No se ha encontrado servicios de asiento"
+
+		def seats		= []
+		def validSeats	= []
+		
+		def seatMap	= rs.Body.SeatAvailabilityRS.SeatMap.find(){ it.SegmentRef.toString().equals(segm) }
+		
+		validOfferItems.each() { offerItem ->
+			seatMap.Cabin.Row.each() { row ->
+				row.Seat.each() { seat ->
+					if ( 'NO' == seat_code.toUpperCase() ) {
+						if ( seat.OfferItemRefs.toString().contains(offerItem.toString()) ) {
+							seats << row.Number.toString() + seat.Column.toString()
+						}
+					} else {
+						if ( seat.OfferItemRefs.toString().contains(offerItem.toString()) &&
+							seat.SeatCharacteristics.Code.toString().contains(seat_code)	) {
+								seats << row.Number.toString() + seat.Column.toString()
+						}
+					}
+				}
+			}
+			assert seats.size() > 0, "ERROR: Pasajero: $pax / Segmento: [$idx]$segm / Código de asiento: $seat_code -> No hay asientos disponibles"
+						
+			validSeats.addAll(seats)
+			validSeats.unique()
+		}
+	
+		return validSeats
+	}
+
+		//Obtenemos de manera aleatoria un asiento
+	def getSeat( validSeats, seatsSelected, pax, segm, idx ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML/getSeat'
+		
+		def rnd	= new Random()
+		validSeats.removeAll(seatsSelected)
+		def numValidSeats	= validSeats.size()
+		assert numValidSeats > 0, "ERROR: Pasajero: $pax / Segmento: [$idx]$segm / Código de asiento: $seat_code -> No quedan asientos para el pasajero"
+		rnd	= rnd.nextInt(numValidSeats)
+		def seatSelected	= validSeats[rnd]
+		return seatSelected
+	}
+
+		//Obtenemos el XML de la oferta del asiento seleccionado
+	def getALaCarteOfferItem ( rs, pax, segm, seatSelected ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML/getALaCarteOfferItem'
+		
+		def ( rowNumber, columnNumber ) = getRowAndColumn( seatSelected )		
+		def seatMap	= rs.Body.SeatAvailabilityRS.SeatMap.find() {
+			it.SegmentRef.toString().equals(segm)
+		}
+		
+		def auxOfferItems	= seatMap.Cabin.Row.find(){
+			it.Number.toString().equals(rowNumber) && it.Seat.Column.toString().equals(columnNumber)
+		}.Seat.OfferItemRefs.toString()
+
+		sleep(1000)
+		logger.info auxOfferItems.size()
+		logger.info auxOfferItems.toString()
+		
+	}
+
+		//Generamos el XML de los offerItems de los asientos
+	def getSeatsOfferItemXML( rs, seatsOfferItem_XML, aLaCarteOfferItem, pax, segm, seatSelected ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML/getSeatsOfferItemXML'
+				
+		def ( rowNumber, columnNumber ) = getRowAndColumn( seatSelected )
+		def seatMap	= rs.Body.SeatAvailabilityRS.SeatMap.find() {
+			it.SegmentRef.toString().equals(segm)
+		}
+
+		def auxOfferItems	= seatMap.Cabin.Row.find(){
+			it.Number.toString().equals(rowNumber) && it.Seat.Column.toString().equals(columnNumber)
+		}.Seat.OfferItemRefs.toString().split(' ')
+
+		logger.info auxOfferItems.size()
+		logger.info auxOfferItems.toString()
+		
+	}
+
+		//Obtenemos la fila y columna del asiento
+	def getRowAndColumn( seatSelected ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getSeatsOffer_XML/getRowAndColumn'
+		
+		def rowNumber 		= ''
+		def columnNumber	= ''
+		def size			= seatSelected.size()
+		columnNumber	= seatSelected.substring(size-1,size)
+		rowNumber		= seatSelected.substring(0,size-1)
+
+		return [ rowNumber, columnNumber ]
 	}
 }
 
