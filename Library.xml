@@ -221,6 +221,7 @@ class Lib_SettingUpData {
 							, 'FlightPrice'		: false
 							, 'OfferPrice'			: false
 							, 'Ancillaries Presale'	: true
+							, 'Ancillaries Presale - Property Transfer'	: true
 						]
 		
 		if ( '17'	== version ) {
@@ -233,6 +234,7 @@ class Lib_SettingUpData {
 			bagspre.split(",").each() {
 				if ( it != "NO" ) {
 					services.('Ancillaries Presale')	= false
+					services.('Ancillaries Presale - Property Transfer')	= false
 				}
 			}
 		} else if ( '16' == version ) {
@@ -244,7 +246,8 @@ class Lib_SettingUpData {
 
 			bagspre.split(",").each() {
 				if ( it != "NO" ) {
-					services.('Ancillaries Presale') 	= false
+					services.('Ancillaries Presale')	= false
+					services.('Ancillaries Presale - Property Transfer')	= false
 				}
 			}			
 		}
@@ -252,6 +255,7 @@ class Lib_SettingUpData {
 		seatspre.split(",").each() {
 			if ( it != "NO" ) {
 				services.('Ancillaries Presale')	= false
+				services.('Ancillaries Presale - Property Transfer')	= false
 			}
 		}
 
@@ -1373,6 +1377,11 @@ context.setProperty( objName, new LIB_OfferPriceXMLs ( testRunner, context, log)
  *	XML:
  *		- getBagsOffer_XML
  *		- getSeatsOffer_XML
+ *		- getValidSeats
+ *		- getSeat
+ *		- getSeatsOfferItem_XML
+ *		- getSeatOffer_XML
+ *		- getSeatsAmount
  */
 
 import groovy.json.JsonSlurper
@@ -1734,6 +1743,8 @@ class LIB_OrderCreateXMLs {
 							<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]">
 								[OFFERITEMS]
 							</Offer>
+							[BAGS]
+							[SEATS]
 						</Order>"""
 	
 	def offerItem_XML	= """<OfferItem OfferItemID="[OFFERITEM]">
@@ -1832,8 +1843,8 @@ class LIB_OrderCreateXMLs {
 		this.testRunner = whichTestRunner
 	}
 
-		//Devuelve XML de Query
-	def getOrder_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, offerID, rsID ) {
+		//Devuelve XML de Order
+	def getOrder_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, offerID, seatsOffer_XML, bagsOffer_XML, rsID ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getOrder_XML'
 		
 		def tags 		= ''
@@ -1877,6 +1888,8 @@ class LIB_OrderCreateXMLs {
 		order_XML	= order_XML.replace("[OFFERID]"	, offerID		)
 						 .replace("[RESPONSEID]"	, rsID		)
 						 .replace("[OFFERITEMS]"	, offerItems	)
+						 .replace("[BAGS]"	, bagsOffer_XML	)
+						 .replace("[SEATS]" 	, seatsOffer_XML	)
 						 
 		return order_XML
 	}
@@ -1933,9 +1946,9 @@ class LIB_OrderCreateXMLs {
 	}
 
 			//Devuelve XML del Payments
-	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceToPay, 
-					 emailPayer, cardNum, cardType, TestSteps, maskedCreditCard, 
-					 tokenizedCreditCard, serviceFee_XML ) {
+	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceToPay,
+					 bagsAmount, seatsAmount, emailPayer, cardNum, cardType, TestSteps, 
+					 maskedCreditCard, tokenizedCreditCard, serviceFee_XML ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getPayments_XML'	
 
 		def payments_XML		= ''
@@ -1946,6 +1959,9 @@ class LIB_OrderCreateXMLs {
 			payments_XML	= TestSteps.getPropertyValue("${mashery}_MASHERY_CC_ORDERCREATE_v$version")
 		}
 
+		def total			= Double.parseDouble( totalPriceToPay ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount )
+		totalPriceToPay	= total.toString()
+		
 		payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
 								.replace( '[AMOUNT]'			, totalPriceToPay 		)
 								.replace( '[CARDTYPE]'			, cardType	 		)
@@ -3315,12 +3331,7 @@ Lib_xxxxx.run( testRunner, context)
 final ss = context.cntx_XXXX
 
 frase = ss.write("prueba")
-return "ok"</script></con:config></con:testStep><con:testStep type="groovy" name="Groovy Script" id="0d18ccf1-7bb1-4f91-8406-50186aea9852"><con:settings/><con:config><script>def str	= '19C'
-
-def a	= str.substring(str.size()-1)
-def b	= str.substring(0,str.size()-1)
-log.info a
-log.info b</script></con:config></con:testStep><con:properties><con:property><con:name>*                       LISTS</con:name><con:value>*</con:value></con:property><con:property><con:name>**                     LST_IATAs</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_masheryUserName_BETA</con:name><con:value> {
+return "ok"</script></con:config></con:testStep><con:properties><con:property><con:name>*                       LISTS</con:name><con:value>*</con:value></con:property><con:property><con:name>**                     LST_IATAs</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_masheryUserName_BETA</con:name><con:value> {
 									  "0000002"	: "ibreptestagg"
 									, "00000022"	: "ibreptestagg"
 									, "0000010"	: "jrtechnologies"
