@@ -1888,10 +1888,13 @@ class LIB_OrderCreateXMLs {
 			offerItems = offerItems + offerItem_XML.replace("[OFFERITEM]", oi_INF).replace("[TAGS]", tags)
 		}
 
+		if ( 'to be automatically filled' == bagsOffer_XML	) { bagsOffer_XML	= ''	}
+		if ( 'to be automatically filled' == seatsOffer_XML	) { seatsOffer_XML	= ''	}
+		
 		order_XML	= order_XML.replace("[OFFERID]"	, offerID		)
 						 .replace("[RESPONSEID]"	, rsID		)
 						 .replace("[OFFERITEMS]"	, offerItems	)
-						 .replace("[BAGS]"	, bagsOffer_XML	)
+						 .replace("[BAGS]"		, bagsOffer_XML	)
 						 .replace("[SEATS]" 	, seatsOffer_XML	)
 						 
 		return order_XML
@@ -1967,6 +1970,9 @@ class LIB_OrderCreateXMLs {
 			payments_XML	= TestSteps.getPropertyValue("${mashery}_MASHERY_CC_ORDERCREATE_v$version")
 		}
 
+		if ( 'to be automatically filled' == bagsAmount	) { bagsAmount	= '0.00'	}
+		if ( 'to be automatically filled' == seatsAmount	) { seatsAmount= '0.00'	}
+		
 		def total			= Double.parseDouble( totalPriceToPay ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount )
 		totalPriceToPay	= round(total.toString()).toString()
 		
