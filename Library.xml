@@ -1418,7 +1418,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 	}
 
 		//Devuelve XML del offer de maletas
-	def getBagsOffer_XML( rs, responseID, orderID, nADT, nCHD, bags, segmentLstV2 ) {
+	def getBagsOffer_XML( rs, nADT, nCHD, bags, segmentLstV2 ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Ancillaries XMLs/getBagsOffer_XML'
 		
 		def bagsOffer_XML	= ''
@@ -1434,6 +1434,9 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 		segmentLstV2		= segmentLstV2.split('], ')
 		
 		assert rs.Body.ServiceListRS.ALaCarteOffer.size() > 0 : 'No hay disponible servicios de maleta'
+		
+		def orderID	= rs.Body.ServiceListRS.ALaCarteOffer.@OfferID.toString()
+		def responseID	= rs.Body.ServiceListRS.ShoppingResponseID.ResponseID.toString()
 		
 		def offers		= rs.Body.ServiceListRS.ALaCarteOffer
 		def offerIDBaggage	= offers.@OfferID.toString()
@@ -1945,6 +1948,11 @@ class LIB_OrderCreateXMLs {
 		return sf_XML
 	}
 
+		//Eliminar decimales del importe y dejarlo solo con nada más que dos.
+	def round(numberStr){
+  		return Math.round(Double.parseDouble(numberStr) * 100) / 100
+	}
+
 			//Devuelve XML del Payments
 	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceToPay,
 					 bagsAmount, seatsAmount, emailPayer, cardNum, cardType, TestSteps, 
@@ -1960,7 +1968,7 @@ class LIB_OrderCreateXMLs {
 		}
 
 		def total			= Double.parseDouble( totalPriceToPay ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount )
-		totalPriceToPay	= total.toString()
+		totalPriceToPay	= round(total.toString()).toString()
 		
 		payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
 								.replace( '[AMOUNT]'			, totalPriceToPay 		)
@@ -1971,7 +1979,7 @@ class LIB_OrderCreateXMLs {
 								.replace( '[MASKEDCREDITCARD]'	, maskedCreditCard 		)
 								.replace( '[TOKENIZEDCREDITCARD]'	, tokenizedCreditCard 	)
 								
-		return payments_XML
+		return [ payments_XML, totalPriceToPay ]
 	}
 
 			//Devuelve XML del DataList
