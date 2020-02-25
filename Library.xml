@@ -1729,6 +1729,7 @@ context.setProperty( objName, new LIB_AncillariesXMLs ( testRunner, context, log
  *		- getIdentityDocument_XML
  *		- getRemark_XML
  *		- getQueryOrderCreate_XML
+ *		- getOfferSpecialNeeds_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1746,9 +1747,37 @@ class LIB_OrderCreateXMLs {
 							<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]">
 								[OFFERITEMS]
 							</Offer>
+							[SPECIALNEEDS]
 							[BAGS]
 							[SEATS]
 						</Order>"""
+
+	def specialNeeds_XML	= """<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]">
+								[OFFERITEMS]
+							</Offer>"""
+
+	def offerItemSN_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
+									<PassengerRefs>[PAX]</PassengerRefs>
+									<ServiceSelection ServiceID="[SERVICEID]">
+										<ServiceDefinitionID>[DEFINITION]</ServiceDefinitionID>
+									</ServiceSelection>
+								</OfferItem>"""
+
+	def serviceDefSN_XML	= """<ServiceDefinitionList>
+								[SERVICESDEF]
+							</ServiceDefinitionList>"""
+
+	def serviceSN_XML		= """<ServiceDefinition ServiceDefinitionID="[DEF]">
+								<Name>[NAME]</Name>
+								<Descriptions>
+									<Description refs="[PAX]">
+										<Text>[TEXT]</Text>
+									</Description>
+								</Descriptions>
+								<BookingInstructions>
+									<SSRCode>[CODE]</SSRCode>
+								</BookingInstructions>
+							</ServiceDefinition>"""
 	
 	def offerItem_XML	= """<OfferItem OfferItemID="[OFFERITEM]">
 							<PassengerRefs>[TAGS]</PassengerRefs>
@@ -1775,6 +1804,7 @@ class LIB_OrderCreateXMLs {
 									[PASSENGERLIST]
 								</PassengerList>
 								[CONTACTLIST]
+								[SERVICEDEF]
 							</DataLists>"""
 
 	def passenger_XML	= """	<Passenger PassengerID="[PAX]">
@@ -1847,7 +1877,8 @@ class LIB_OrderCreateXMLs {
 	}
 
 		//Devuelve XML de Order
-	def getOrder_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, offerID, seatsOffer_XML, bagsOffer_XML, rsID ) {
+	def getOrder_XML( oi_ADT, oi_CHD, oi_INF, nADT, nCHD, nINF, offerID, 
+					seatsOffer_XML, bagsOffer_XML, offerSpecialNeeds_XML, rsID ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getOrder_XML'
 		
 		def tags 		= ''
@@ -1891,11 +1922,12 @@ class LIB_OrderCreateXMLs {
 		if ( 'to be automatically filled' == bagsOffer_XML	) { bagsOffer_XML	= ''	}
 		if ( 'to be automatically filled' == seatsOffer_XML	) { seatsOffer_XML	= ''	}
 		
-		order_XML	= order_XML.replace("[OFFERID]"	, offerID		)
-						 .replace("[RESPONSEID]"	, rsID		)
-						 .replace("[OFFERITEMS]"	, offerItems	)
-						 .replace("[BAGS]"		, bagsOffer_XML	)
-						 .replace("[SEATS]" 	, seatsOffer_XML	)
+		order_XML	= order_XML.replace("[OFFERID]"		, offerID				)
+						 .replace("[RESPONSEID]"		, rsID				)
+						 .replace("[OFFERITEMS]"		, offerItems			)
+						 .replace("[SPECIALNEEDS]"	, offerSpecialNeeds_XML	)
+						 .replace("[BAGS]"			, bagsOffer_XML		)
+						 .replace("[SEATS]" 		, seatsOffer_XML		)
 						 
 		return order_XML
 	}
@@ -1959,7 +1991,8 @@ class LIB_OrderCreateXMLs {
 			//Devuelve XML del Payments
 	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceToPay,
 					 bagsAmount, seatsAmount, emailPayer, cardNum, cardType, TestSteps, 
-					 maskedCreditCard, tokenizedCreditCard, serviceFee_XML ) {
+					 maskedCreditCard, tokenizedCreditCard, serviceFee_XML,
+					 specialNeedsAmount ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getPayments_XML'	
 
 		def payments_XML		= ''
@@ -1973,7 +2006,7 @@ class LIB_OrderCreateXMLs {
 		if ( 'to be automatically filled' == bagsAmount	) { bagsAmount	= '0.00'	}
 		if ( 'to be automatically filled' == seatsAmount	) { seatsAmount= '0.00'	}
 		
-		def total			= Double.parseDouble( totalPriceToPay ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount )
+		def total			= Double.parseDouble( totalPriceToPay ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount ) + Double.parseDouble( specialNeedsAmount )
 		totalPriceToPay	= round(total.toString()).toString()
 		
 		payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
@@ -1990,7 +2023,8 @@ class LIB_OrderCreateXMLs {
 
 			//Devuelve XML del DataList
 	def getDataList_XML( 	nADT, nCHD, nINF, lst_adults, lst_childs, lst_infants,
-						residentDisc, largeFamilyDisc, email, emailPayer ) {
+						residentDisc, largeFamilyDisc, email, emailPayer,
+						serviceDefSN_XML ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getDataList_XML'
 		
 		def json	= new JsonSlurper()
@@ -2088,6 +2122,7 @@ class LIB_OrderCreateXMLs {
 										
 		dataList_XML		= dataList_XML		.replace( '[PASSENGERLIST]'	, passengerLst_XML	)
 										.replace( '[CONTACTLIST]'	, contactList_XML	)
+										.replace( '[SERVICEDEF]'		, serviceDefSN_XML	)
 	}
 	
 			//Devuelve XML de identityDocument para el passenger_XML
@@ -2157,7 +2192,7 @@ class LIB_OrderCreateXMLs {
 		return passengerLst_XML
 	}
 
-		//Devuelve XML del getQueryOrderCreate_XML
+		//Devuelve XML de la query
 	def getQueryOrderCreate_XML( order_XML, payments_XML, dataLists_XML ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getQueryOrderCreate_XML'
 		
@@ -2166,6 +2201,82 @@ class LIB_OrderCreateXMLs {
 							.replace( '[DATALISTS]'	, dataLists_XML	)
 
 		return query_XML
+	}
+
+		//Devuelve XML del Offer para SpecialNeeds
+	def getOfferSpecialNeeds_XML( rs, specialNeeds ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderCreate XMLs/getOfferSpecialNeeds_XML'
+
+		def XML_offerSN		= ''
+		def XML_serviceSN		= ''
+		def pax				= []
+		def needs				= ''
+		def offerItemSN		= ''
+		def serviceSN			= ''
+		def offerItem			= ''
+		def serviceID			= ''
+		def definition			= ''
+		def name				= ''
+		def text				= ''
+		def code				= ''
+		def specialNeedsAmount	= 0.00
+		List auxSN
+
+		def responseID	= rs.ShoppingResponseID.ResponseID.toString()
+		def offerID	= rs.OtherOffers.ALaCarteOffer.@OfferID.toString()
+		
+		specialNeeds	= specialNeeds.split(',')
+
+		specialNeeds.each() { 
+			auxSN	= it.toString().split(' ')
+			pax		= auxSN[0]
+			auxSN.removeAt(0)
+
+			auxSN.each() { need ->
+				 
+				 offerItemSN	= rs.OtherOffers.ALaCarteOffer.ALaCarteOfferItem.find() {
+					it.Eligibility.PassengerRefs.toString().contains(pax.toString()) && 
+					it.@OfferItemID.toString().contains(need.toString())
+				}
+
+				assert offerItemSN != '', "ERROR: No se ha encontrado oferta con necesidad especial $need"
+				
+				specialNeedsAmount	= specialNeedsAmount + Double.parseDouble(offerItemSN.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toString())
+
+				offerItem			= offerItemSN.@OfferItemID.toString()
+				serviceID			= offerItemSN.Service.@ServiceID.toString()
+				definition		= offerItemSN.Service.ServiceDefinitionRef.toString()
+				
+				XML_offerSN		= XML_offerSN + offerItemSN_XML	.replace( '[OFFERITEM]'	, offerItem 	)
+															.replace( '[PAX]'		, pax 		)
+															.replace( '[SERVICEID]'	, serviceID	)
+															.replace( '[DEFINITION]'	, definition	)
+
+				serviceSN			= rs.DataLists.ServiceDefinitionList.ServiceDefinition.find() {
+					it.@ServiceDefinitionID.toString().equals(definition)
+				}
+
+				assert serviceSN != '', "ERROR: No se ha encontrado servicio con defincion '$definition'"
+				
+				name	= serviceSN.Name.toString()
+				text	= serviceSN.Descriptions.Description.Text.toString()
+				code	= serviceSN.BookingInstructions.SSRCode.toString()
+				
+				XML_serviceSN	= XML_serviceSN + serviceSN_XML	.replace( '[DEF]'	, definition	)
+														.replace( '[NAME]'	, name		)
+														.replace( '[PAX]'	, pax		)
+														.replace( '[TEXT]'	, text		)
+														.replace( '[CODE]'	, code		)
+			}
+			
+			XML_offerSN	= specialNeeds_XML	.replace( '[OFFERID]'	, offerID		)
+										.replace( '[RESPONSEID]'	, responseID	)
+										.replace( '[OFFERITEMS]'	, XML_offerSN	)
+
+			XML_serviceSN	= serviceDefSN_XML	.replace( '[SERVICESDEF]' , XML_serviceSN )
+		}
+
+		return [ specialNeedsAmount.toString(), XML_offerSN, XML_serviceSN ]
 	}
 }
 
