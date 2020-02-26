@@ -221,7 +221,7 @@ class Lib_SettingUpData {
 							, 'FlightPrice'		: false
 							, 'OfferPrice'			: false
 							, 'Ancillaries Presale'	: true
-							, 'Ancillaries Presale - Property Transfer'	: true
+							, 'RS_Ancillaries Presale'	: true
 						]
 		
 		if ( '17'	== version ) {
@@ -234,7 +234,7 @@ class Lib_SettingUpData {
 			bagspre.split(",").each() {
 				if ( it != "NO" ) {
 					services.('Ancillaries Presale')	= false
-					services.('Ancillaries Presale - Property Transfer')	= false
+					services.('RS_Ancillaries Presale')	= false
 				}
 			}
 		} else if ( '16' == version ) {
@@ -247,7 +247,7 @@ class Lib_SettingUpData {
 			bagspre.split(",").each() {
 				if ( it != "NO" ) {
 					services.('Ancillaries Presale')	= false
-					services.('Ancillaries Presale - Property Transfer')	= false
+					services.('RS_Ancillaries Presale')	= false
 				}
 			}			
 		}
@@ -255,7 +255,7 @@ class Lib_SettingUpData {
 		seatspre.split(",").each() {
 			if ( it != "NO" ) {
 				services.('Ancillaries Presale')	= false
-				services.('Ancillaries Presale - Property Transfer')	= false
+				services.('RS_Ancillaries Presale')	= false
 			}
 		}
 
@@ -2312,7 +2312,59 @@ class LIB_OrderCreateXMLs {
 
 final objName	= "cntx_OCXML"
 context.setProperty( objName, new LIB_OrderCreateXMLs ( testRunner, context, log) )
-]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderReshop XML" id="50a4dcb7-f7fa-43e0-bbce-4638fedca120" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderRetrieve XML" id="7c85e4c6-6bcb-4ce3-8e6b-f5f1ffd2ec2a" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+ *	XML:
+ *		- getReshop_XML
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_OrderRetrieveXMLs {
+
+def PNR_XML		= """	<Query>
+							<Filters>
+								<BookingReferences>
+									<BookingReference>
+ 										<ID>[PNR]</ID>
+ 										<AirlineID>IB</AirlineID>
+									</BookingReference>
+								</BookingReferences>
+							</Filters>
+						</Query>"""
+
+def orderID_XML	= """	<Query>
+			            		<Filters>
+			               		<OrderID Owner="IB">[ORDERID]</OrderID>
+			            		</Filters>
+	  					</Query>""" 
+
+	def public testRunner, context, logger	  					
+			            	
+	def LIB_OrderRetrieveXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+	
+	def getQuery_XML( PNR, orderID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderRetrieve XMLs/getQuery_XML'
+
+		def query_XML = ''
+		
+		if ( '' != PNR && 'NO' != PNR ) {
+			query_XML	= PNR_XML.replace( '[PNR]', PNR )
+		} else {
+			assert '' != orderID  && 'NO' != orderID, "  ERROR: No se ha dado valor a los parámetros PNR o orderID"
+			query_XML = orderID_XML.replace( '[ORDERID]', orderID )
+		}
+
+		return query_XML		
+	}
+}
+
+final objName	= "cntx_ORXML"
+context.setProperty( objName, new LIB_OrderRetrieveXMLs ( testRunner, context, log) )
+	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderReshop XML" id="50a4dcb7-f7fa-43e0-bbce-4638fedca120" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getReshop_XML
  */
