@@ -2282,7 +2282,40 @@ class LIB_OrderCreateXMLs {
 
 final objName	= "cntx_OCXML"
 context.setProperty( objName, new LIB_OrderCreateXMLs ( testRunner, context, log) )
-]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderReshop XML" id="50a4dcb7-f7fa-43e0-bbce-4638fedca120" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+ *	XML:
+ *		- getReshop_XML
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_OrderReshopXMLs {
+
+	orderItem_XML		= """<OrderItem OrderItemID="[ORDERITEM]"/>"""
+
+	reshop_XML		= """<Reshop>
+			               <OrderServicing>
+			                  <Delete>
+			                     [ORDERITEMS]
+			                  </Delete>
+			               </OrderServicing>
+			            </Reshop>"""
+			            	
+	def LIB_OrderReshopXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+	
+	def getPreviousStepName() {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XMLs/getPreviousStepName'
+		
+	}
+}
+
+final objName	= "cntx_ORXML"
+context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log) )
+	]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
 		/*
 		 * 	cloud: https://api.iberia.com/iberia/cloud/ndc/AirShopping/15.2/v1
 		 * 	78213645 First in Service Spain
