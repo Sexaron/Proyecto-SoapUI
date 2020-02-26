@@ -682,6 +682,8 @@ context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]
  *		- getOfferID
  *		- getPNR
  *		- getTickets
+ *		- getEMDS
+ *		- getOfferItems
  */
  
 import groovy.json.JsonSlurper
@@ -704,9 +706,9 @@ class Lib_GettingDataFromOfferID {
 		def data	= 	[	'totalPriceOffer'		: 'N/A',
 						'totalPriceToPay'		: 'N/A',
 						'currency'			: 'N/A',
-						'offerItemID_ADT'		: 'N/A',
-						'offerItemID_CHD'		: 'N/A',
-						'offerItemID_INF'		: 'N/A',
+						'offerItemID_ADT_AirShopping'	: 'N/A',
+						'offerItemID_CHD_AirShopping'	: 'N/A',
+						'offerItemID_INF_AirShopping'	: 'N/A',
 						'totalPriceADTS'		: 'N/A',
 						'totalPriceCHDS'		: 'N/A',
 						'totalPriceINFS'		: 'N/A',
@@ -742,7 +744,7 @@ class Lib_GettingDataFromOfferID {
 			offerItem	= 	offer.OfferItem.find() {
 							it.Service.PassengerRefs.toString().contains('ADULT')
 						}
-			data.offerItemID_ADT	= offerItem.@OfferItemID.toString()
+			data.offerItemID_ADT_AirShopping	= offerItem.@OfferItemID.toString()
 			data.totalPriceADTS		= offerItem.TotalPriceDetail.TotalAmount.SimpleCurrencyPrice
 			data.totalPricePerADT	= offerItem.FareDetail.Price.TotalAmount.SimpleCurrencyPrice
 			data.basePricePerADT	= offerItem.FareDetail.Price.BaseAmount
@@ -754,7 +756,7 @@ class Lib_GettingDataFromOfferID {
 			offerItem	= 	offer.OfferItem.find() {
 							it.Service.PassengerRefs.toString().contains('CHILD')
 						}
-			data.offerItemID_CHD	= offerItem.@OfferItemID.toString()
+			data.offerItemID_CHD_AirShopping	= offerItem.@OfferItemID.toString()
 			data.totalPriceCHDS		= offerItem.TotalPriceDetail.TotalAmount.SimpleCurrencyPrice
 			data.totalPricePerCHD	= offerItem.FareDetail.Price.TotalAmount.SimpleCurrencyPrice
 			data.basePricePerCHD	= offerItem.FareDetail.Price.BaseAmount
@@ -766,7 +768,7 @@ class Lib_GettingDataFromOfferID {
 			offerItem	= 	offer.OfferItem.find() {
 							it.Service.PassengerRefs.toString().contains('INFANT')
 						}
-			data.offerItemID_INF	= offerItem.@OfferItemID.toString()
+			data.offerItemID_INF_AirShopping	= offerItem.@OfferItemID.toString()
 			data.totalPriceINFS		= offerItem.TotalPriceDetail.TotalAmount.SimpleCurrencyPrice
 			data.totalPricePerINF	= offerItem.FareDetail.Price.TotalAmount.SimpleCurrencyPrice
 			data.basePricePerINF	= offerItem.FareDetail.Price.BaseAmount
@@ -809,36 +811,36 @@ class Lib_GettingDataFromOfferID {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItemsFromOfferPrice'
 
 		def nItem 					= 0
-		def offerItemID_ADT_OfferPrice 	= ''
-		def offerItemID_CHD_OfferPrice 	= ''
-		def offerItemID_INF_OfferPrice 	= ''
+		def offerItemID_ADT 	= ''
+		def offerItemID_CHD 	= ''
+		def offerItemID_INF 	= ''
 		
 		if ( nADT != '0' && nADT != 'NO' && nADT != '' ) {
-			offerItemID_ADT_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
-			assert offerItemID_ADT_OfferPrice != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
+			offerItemID_ADT	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			assert offerItemID_ADT != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
 			nItem++
 		} else {
-			offerItemID_ADT_OfferPrice	= 'N/A'
+			offerItemID_ADT	= 'N/A'
 		}
 
 		if ( nCHD != '0' && nCHD != 'NO' && nCHD != '' ) {
-			offerItemID_CHD_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
-			assert offerItemID_CHD_OfferPrice != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
+			offerItemID_CHD	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			assert offerItemID_CHD != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
 			nItem++
 		} else {
-			offerItemID_CHD_OfferPrice	= 'N/A'
+			offerItemID_CHD	= 'N/A'
 		}
 		
 		if ( nINF != '0' && nINF != 'NO' && nINF != '' ) {
-			offerItemID_INF_OfferPrice	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
-			assert offerItemID_INF_OfferPrice != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
+			offerItemID_INF	= rs.PricedOffer.OfferItem[nItem].@OfferItemID.toString()
+			assert offerItemID_INF != '', " ERROR: los offerItemsID desde el OfferPrice van vacíos. Comprobar respuesta de OfferPrice"
 		} else {
-			offerItemID_INF_OfferPrice	= 'N/A'
+			offerItemID_INF	= 'N/A'
 		}
 
-		testRunner.testCase.setPropertyValue( 'offerItemID_ADT_OfferPrice', offerItemID_ADT_OfferPrice )
-		testRunner.testCase.setPropertyValue( 'offerItemID_CHD_OfferPrice', offerItemID_CHD_OfferPrice )
-		testRunner.testCase.setPropertyValue( 'offerItemID_INF_OfferPrice', offerItemID_INF_OfferPrice )
+		testRunner.testCase.setPropertyValue( 'offerItemID_ADT', offerItemID_ADT )
+		testRunner.testCase.setPropertyValue( 'offerItemID_CHD', offerItemID_CHD )
+		testRunner.testCase.setPropertyValue( 'offerItemID_INF', offerItemID_INF )
 
 	}
 
@@ -875,6 +877,34 @@ class Lib_GettingDataFromOfferID {
 		}
 		
 		return tickets
+	}
+
+	def getEMDS ( rs )  {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getEMDS'
+
+		def emds	= []
+		
+		rs.Response.TicketDocInfos.TicketDocInfo.each(){
+			if ( it.TicketDocument.Type.toString() == 'J' ) { 
+				emds << it.TicketDocument.TicketDocNbr 
+			}
+		}
+
+		emds	= emds.toString().replace('[', '')
+								.replace(']', '')
+
+		if ( emds == '' ) {
+			emds = 'N/A'
+		}
+
+		return emds
+	}
+
+	def getOfferItems ( rs )  {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItems'
+		
+		
+		//return emds
 	}	
 }
 
@@ -2307,8 +2337,10 @@ class LIB_OrderReshopXMLs {
 		this.testRunner = whichTestRunner
 	}
 	
-	def getPreviousStepName() {
-		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XMLs/getPreviousStepName'
+	def getReshop_XML( offerItemID_ADT, offerItemID_CHD, offerItemID_INF ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XMLs/getReshop_XML'
+
+		
 		
 	}
 }
