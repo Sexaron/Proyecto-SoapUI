@@ -218,6 +218,8 @@ class Lib_SettingUpData {
 		logger.info ':: RUNNING -> //Libs/LIB_Setting up data/enableSteps'
 
 		def services	=	[	  'AirShopping'		: false
+							, 'RQ_AirShopping_v17'	: false
+							, 'RS_AirShopping_v17'	: false
 							, 'FlightPrice'		: false
 							, 'OfferPrice'			: false
 							, 'Ancillaries Presale'	: true
@@ -226,9 +228,13 @@ class Lib_SettingUpData {
 		
 		if ( '17'	== version ) {
 			if ( 'YES' == flightPriceDirect.toUpperCase() ) { 
-				services.AirShopping	= true
+				services.AirShopping		= true
+				services.RQ_AirShopping_v17	= true
+				services.RS_AirShopping_v17	= true
 			} else {
 				services.AirShopping	= false
+				services.RQ_AirShopping_v17	= true
+				services.RS_AirShopping_v17	= true
 			}
 			
 			bagspre.split(",").each() {
@@ -237,7 +243,7 @@ class Lib_SettingUpData {
 					services.('RS_Ancillaries Presale')	= false
 				}
 			}
-		} else if ( '16' == version ) {
+		} /*else if ( '16' == version ) {
 			if ( 'YES' == flightPriceDirect.toUpperCase() ) { 
 				services.AirShopping	= true
 			} else {
@@ -250,7 +256,7 @@ class Lib_SettingUpData {
 					services.('RS_Ancillaries Presale')	= false
 				}
 			}			
-		}
+		}*/
 
 		seatspre.split(",").each() {
 			if ( it != "NO" ) {
@@ -677,13 +683,15 @@ class Lib_GettingData {
 final objName	= "cntx_GO"
 context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	Métodos:
- *		- setDataFromOfferID
- *		- gettingOfferItemsFromOfferPrice
+ *		- getDataFromOfferID
+ * 		- getSegmentLstV2 
+ *		- getOfferItemsFromOfferPrice
  *		- getOfferID
  *		- getPNR
  *		- getTickets
  *		- getEMDS
- *		- getOfferItems
+ *		- getTotalPriceOfferFromOPDirect
+ *		- getResponseID
  */
  
 import groovy.json.JsonSlurper
@@ -795,6 +803,7 @@ class Lib_GettingDataFromOfferID {
 		testRunner.testCase.setPropertyValue( 'flightNumLst'   , flightNumLst.toString().replace('[', '').replace(']','') )
 	}
 
+		//Se obtiene una segunda lista de los segmentos en forma de array
 	def getSegmentLstV2	( rs ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getSegmentLstV2'
 
@@ -806,7 +815,8 @@ class Lib_GettingDataFromOfferID {
 
 		return segmentReference.toString()
 	}
-
+	
+		//Se obtiene los offerItems a partir de la respuesta del OfferPrice
 	def getOfferItemsFromOfferPrice ( nADT, nCHD, nINF, rs ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItemsFromOfferPrice'
 
@@ -844,6 +854,7 @@ class Lib_GettingDataFromOfferID {
 
 	}
 
+		//Se obtiene el offerID/orderID de la oferta
 	def getOfferID ( rs ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferID'
 
@@ -855,6 +866,7 @@ class Lib_GettingDataFromOfferID {
 		return offerID
 	}
 
+		//Se obtiene el PNR de la oferta
 	def getPNR ( rs )  {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getPNR'
 
@@ -862,6 +874,7 @@ class Lib_GettingDataFromOfferID {
 		return PNR.toString()
 	}
 
+		//Se obtienen los tickets de la compra
 	def getTickets ( rs )  {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getTickets'
 
@@ -883,6 +896,7 @@ class Lib_GettingDataFromOfferID {
 		return tickets
 	}
 
+		//Se obtienen los EMDs de la compra
 	def getEMDS ( rs )  {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getEMDS'
 
@@ -902,6 +916,24 @@ class Lib_GettingDataFromOfferID {
 		}
 
 		return emds
+	}
+
+		//Se obtienen el precio de la oferta a partir del OfferPrice Direct
+	def getTotalPriceOfferFromOPDirect ( rs )  {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getTotalPriceOfferFromOPDirect'
+
+		def totalPriceOffer	= rs.PricedOffer.TotalPrice.SimpleCurrencyPrice.toString()
+		
+		return totalPriceOffer
+	}
+
+		//Se obtienen el responseID de la oferta a partir del OfferPrice Direct
+	def getResponseID ( rs )  {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getResponseID'
+
+		def responseID	= rs.ShoppingResponseID.ResponseID.toString()
+		
+		return responseID
 	}
 }
 
@@ -1208,25 +1240,25 @@ class LIB_AirShoppingXMLs {
 		def auxFarePreferences	= ''
 		def auxTicketDesigs		= ''
 
-		def auxCH	= ch
-		switch ( auxCH.toUpperCase() ) {
+		def auxCP	= cP
+		switch ( auxCP.toUpperCase() ) {
 			case ['1', 'FIRST']:
-				ch = '1'
+				cP = '1'
 				break
 			case ['2', 'BUSINESS']:
-				ch = '2'
+				cP = '2'
 				break
 			case ['4', 'PREMIUM TOURIST']:
-				ch = '4'
+				cP = '4'
 				break
 			case ['5', 'ECONOMY']:
-				ch = '1'
+				cP = '1'
 				break
 			case ['NO', '']:
-				ch = 'NO'
+				cP = 'NO'
 				break				
 			default:
-				ch = 'NO'
+				cP = 'NO'
 				logger.warn " WARNING: cabinPreference ha sido modificado a NO. Si no es la opción deseada revisa la propiedad cabinPreference en las propiedades"
 				break			
 		}		
@@ -1260,7 +1292,7 @@ class LIB_AirShoppingXMLs {
 		return preference_XML
 	}
 
-		//Devuelve XML de Preferences
+		//Devuelve XML de DataLists
 	def getDataLists_XML( nADT, nCHD, nINF ) {
 		logger.info ':: RUNNING -> //Libs/LIB_AirShopping XMLs/getDataLists_XML'
 		
@@ -1303,7 +1335,10 @@ context.setProperty( objName, new LIB_AirShoppingXMLs ( testRunner, context, log
 ]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OfferPrice XMLs" id="b1fa03fe-9c8c-4933-bd35-6e568fb6d42f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getQuery_XML
+ *		- getJourneyData_XML
  *		- getQualifier_XML
+ *		- getDataListsOFDirect_XML
+ *		- getPreferences_XML
  */
 
 import groovy.json.JsonSlurper
@@ -1326,6 +1361,50 @@ class LIB_OfferPriceXMLs {
 				               <Code>DISA</Code>
 				            </SpecialNeedQualifiers>
 				         </Qualifier>"""
+
+	def dataLists_XML			= """<DataLists>
+									<PassengerList>
+										[PASSENGER]
+									</PassengerList>
+								</DataLists>"""
+
+	def passenger_XML			= """<Passenger PassengerID="[ID]">
+									<PTC>[PTC]</PTC>
+								</Passenger>"""
+
+	def journeyData_XML			= """	<JourneyData>
+										[FLIGHTS]
+									</JourneyData>"""
+	
+	def flight_XML				= """	<Flight>
+										<Flight>
+				                  				<Departure>
+				                     				<AirportCode>[ORI]</AirportCode>
+				                     				<Date>[DATE]</Date>
+				                  				</Departure>
+				                  				<Arrival>
+				                     				<AirportCode>[DES]</AirportCode>
+				                  				</Arrival>
+				                  				<MarketingCarrier>
+				                     				<AirlineID>[AIRLINE]</AirlineID>
+				                     				<FlightNumber>[FLIGHTNUM]</FlightNumber>
+				                  				</MarketingCarrier>
+				               			</Flight>
+			               			</Flight>"""
+
+	def preference_XML			= """<Preference>
+									[FAREPREFERENCES]
+								</Preference>"""
+
+	def farePreferences_XML		= """<FarePreferences>
+									[DISCOUNTS]
+								</FarePreferences>"""
+
+	def ticketDesigs_XML		= """<TicketDesigs>
+									[TICKETDESIG]
+								</TicketDesigs>"""	
+
+	def ticketDesig_XML			= """<TicketDesig>[ITEM]</TicketDesig>"""	               															         
 							
 
 	def public testRunner, context, logger
@@ -1384,9 +1463,42 @@ class LIB_OfferPriceXMLs {
 						 .replace("[OFFERITEMS]"	, offerItems	)		
 			
 		return query_XML
-	}	
+	}
 
-		//Devuelve XML de CoreQuery
+		//Devuelve XML de JourneyData para el OfferPrice Direct
+	def getJourneyData_XML( arrayDates, numSegments, numCities, citiesLst, airlineID, flightNum ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OfferPrice XMLs/getJourneyData_XML'		
+
+		def flightNumLst	= flightNum.split(',')
+		def iFlightNum		= 0
+		def fNum			= ''
+		def journeyDataXML	= ''
+		def iDate 		= 0
+		citiesLst			= citiesLst.split(',')
+		
+		for (int i = 0; i < numCities; i++) {
+			assert airlineID != 'RANDOM' && airlineID != 'NO' && airlineID != '', "ERROR: La propertie 'airlineID' no es válida"
+			assert numSegments == flightNumLst.size(), "ERROR: La propertie 'flightNum' no se corresponde con el número de segmentos de la reserva"
+			assert flightNumLst[iFlightNum] != 'RANDOM' && flightNumLst[iFlightNum] != 'NO' && flightNumLst[iFlightNum] != '', "ERROR: La propertie 'flightNum' no es válida"
+	
+			fNum	= flightNumLst[iFlightNum].toString()
+	
+			journeyDataXML	= journeyDataXML + flight_XML	.replace('[ORI]', citiesLst[i])
+												.replace('[DATE]', arrayDates[iDate])
+												.replace('[FLIGHTNUM]', fNum)
+												.replace('[AIRLINE]', airlineID)
+												
+			iDate++
+			iFlightNum++
+			journeyDataXML	= journeyDataXML.replace('[DES]', citiesLst[++i])
+		}
+
+		journeyDataXML	= journeyData_XML.replace( '[FLIGHTS]', journeyDataXML )
+		
+		return journeyDataXML
+	}			
+
+		//Devuelve XML de Qualifier
 	def getQualifier_XML( specialNeeds ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OfferPrice XMLs/getQualifier_XML'
 
@@ -1395,6 +1507,79 @@ class LIB_OfferPriceXMLs {
 		} // else manda el XML tal cual
 		
 		return qualifier_XML
+	}
+
+		//Devuelve XML de dataLists para el OfferPrice Direct
+	def getDataListsOFDirect_XML( nADT, nCHD, nINF ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OfferPrice XMLs/getDataListsOFDirect_XML'
+		
+		nADT			= nADT.toInteger()
+		nCHD			= nCHD.toInteger()
+		nINF			= nINF.toInteger()
+		def auxPassenger	= ''
+		if ( 0 != nADT ) {
+			(1..nADT).each(){ index ->
+				def id	= 'ADULT_0' + index.toString()
+				auxPassenger	= auxPassenger + passenger_XML.replace( '[ID]'	, id		)
+													.replace( '[PTC]'	, 'ADT'	)
+			}
+		}
+
+		if ( 0 != nCHD ) {
+			(1..nCHD).each(){ index ->
+				def id	= 'CHILD_0' + index.toString()
+				auxPassenger	= auxPassenger + passenger_XML.replace( '[ID]'	, id		)
+													.replace( '[PTC]'	, 'CHD'	)
+			}
+		}
+
+		if ( 0 != nINF ) {
+			(1..nINF).each(){ index ->
+				def id	= 'INFANT_0' + index.toString()
+				auxPassenger	= auxPassenger + passenger_XML.replace( '[ID]'	, id		)
+													 .replace( '[PTC]'	, 'INF'	)
+			}
+		}			
+
+		dataLists_XML	= dataLists_XML.replace( '[PASSENGER]', auxPassenger )
+		
+		return dataLists_XML
+	}
+
+		//Devuelve XML de Preferences para el OfferPrice Direct
+	def getPreferences_XML( rD, lF ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OfferPrice XMLs/getPreferences_XML'
+		
+		def lst_xml	= []
+		lst_xml	<< ticketDesig_XML
+		lst_xml	<< ticketDesig_XML
+
+		def lst_items			= [ rD, lF ]
+		def aux				= ''
+		def auxFarePreferences	= ''
+		def auxTicketDesigs		= ''		
+
+		lst_items.eachWithIndex() { item, index ->
+			if ( null == item || 'NO' == item ) {
+				lst_xml[index]	= ''
+			} else {
+				lst_xml[index] = lst_xml[index].replace( '[ITEM]', item )
+			}
+		}
+
+		if ( '' != lst_xml[0] ) 		{	auxTicketDesigs	= auxTicketDesigs + lst_xml[0]	}
+		
+		if ( '' != lst_xml[1] ) 		{	auxTicketDesigs	= auxTicketDesigs + lst_xml[1]	}
+
+		if ( '' != auxTicketDesigs ) 	{	ticketDesigs_XML 	= ticketDesigs_XML.replace( '[TICKETDESIG]', auxTicketDesigs )	}
+		else 					{	ticketDesigs_XML 	= ''	}
+
+		if ( '' == ticketDesigs_XML )	{	preference_XML		= ''	}
+		else 					{	farePreferences_XML	= farePreferences_XML.replace( '[DISCOUNTS]', ticketDesigs_XML 		)
+									preference_XML		= preference_XML.replace( '[FAREPREFERENCES]', farePreferences_XML 	)
+								}
+										
+		return preference_XML
 	}
 }
 
@@ -2016,7 +2201,7 @@ class LIB_OrderCreateXMLs {
 	}
 
 			//Devuelve XML del Payments
-	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceToPay,
+	def getPayments_XML( mashery, version, paymentMethod_order, currency, totalPriceOffer,
 					 bagsAmount, seatsAmount, emailPayer, cardNum, cardType, TestSteps, 
 					 maskedCreditCard, tokenizedCreditCard, serviceFee_XML,
 					 specialNeedsAmount ) {
@@ -2032,9 +2217,10 @@ class LIB_OrderCreateXMLs {
 
 		if ( 'to be automatically filled' == bagsAmount	) { bagsAmount	= '0.00'	}
 		if ( 'to be automatically filled' == seatsAmount	) { seatsAmount= '0.00'	}
-		
-		def total			= Double.parseDouble( totalPriceToPay ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount ) + Double.parseDouble( specialNeedsAmount )
-		totalPriceToPay	= round(total.toString()).toString()
+
+		logger.info "ENTRA"
+		def total			= Double.parseDouble( totalPriceOffer ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount ) + Double.parseDouble( specialNeedsAmount )
+		def totalPriceToPay	= round(total.toString()).toString()
 		
 		payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
 								.replace( '[AMOUNT]'			, totalPriceToPay 		)
@@ -2311,7 +2497,7 @@ final objName	= "cntx_OCXML"
 context.setProperty( objName, new LIB_OrderCreateXMLs ( testRunner, context, log) )
 ]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderRetrieve XML" id="7c85e4c6-6bcb-4ce3-8e6b-f5f1ffd2ec2a" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
- *		- getReshop_XML
+ *		- getQuery_XML
  */
 
 import groovy.json.JsonSlurper
@@ -2342,7 +2528,8 @@ def orderID_XML	= """	<Query>
 		this.context	= whichContext
 		this.testRunner = whichTestRunner
 	}
-	
+
+		//Query para el OrderRetrieve
 	def getQuery_XML( PNR, orderID ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderRetrieve XMLs/getQuery_XML'
 
