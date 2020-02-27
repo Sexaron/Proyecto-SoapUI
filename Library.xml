@@ -847,8 +847,12 @@ class Lib_GettingDataFromOfferID {
 	def getOfferID ( rs ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferID'
 
-		def offer = rs.PricedOffer.@OfferID.toString()
-		return offer
+		def offerID = rs.PricedOffer.@OfferID.toString()
+
+		if ( '' == offerID ) {
+			offerID	= rs.Response.Order.@OrderID.toString()
+		}
+		return offerID
 	}
 
 	def getPNR ( rs )  {
@@ -899,13 +903,6 @@ class Lib_GettingDataFromOfferID {
 
 		return emds
 	}
-
-	def getOfferItems ( rs )  {
-		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItems'
-		
-		
-		//return emds
-	}	
 }
 
 final objName	= "cntx_GDFO"
@@ -2373,27 +2370,46 @@ import groovy.json.JsonSlurper
 
 class LIB_OrderReshopXMLs {
 
-	orderItem_XML		= """<OrderItem OrderItemID="[ORDERITEM]"/>"""
+	def	reshop_XML		= """<Reshop>
+					   			<OrderServicing>
+					   				<Delete>
+										[ORDERITEMS]
+									</Delete>
+					   			</OrderServicing>
+					 		</Reshop>"""
 
-	reshop_XML		= """<Reshop>
-			               <OrderServicing>
-			                  <Delete>
-			                     [ORDERITEMS]
-			                  </Delete>
-			               </OrderServicing>
-			            </Reshop>"""
+	def orderItem_XML		= """<OrderItem OrderItemID="[ORDERITEM]"/>"""
+
+	def public testRunner, context, logger
 			            	
 	def LIB_OrderReshopXMLs ( whichTestRunner, whichContext, whichLogger ){
 		this.logger	= whichLogger
 		this.context	= whichContext
 		this.testRunner = whichTestRunner
 	}
-	
-	def getReshop_XML( offerItemID_ADT, offerItemID_CHD, offerItemID_INF ) {
+
+		//Devuelve el XML del reshop
+	def getReshop_XML( orderView ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XMLs/getReshop_XML'
 
+		def rs	= new XmlSlurper().parseText(orderView).declareNamespace('ns2':'http://www.iata.org/IATA/EDIST')
+
+		def pax = ''
+		def orderItems_XML	= ''
+		def orderItem		= ''
 		
+		rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.each() {
+			pax	= it.FareDetail.PassengerRefs.toString()
+
+			if( '' != pax ){
+				orderItem	= it.@OrderItemID.toString()
+				orderItems_XML	= orderItems_XML + orderItem_XML.replace( '[ORDERITEM]', orderItem )
+			}
+		}
+
+		reshop_XML	= reshop_XML.replace( '[ORDERITEMS]', orderItems_XML )
 		
+		return reshop_XML
 	}
 }
 
