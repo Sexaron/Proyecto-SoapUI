@@ -232,9 +232,9 @@ class Lib_SettingUpData {
 				services.RQ_AirShopping_v17	= true
 				services.RS_AirShopping_v17	= true
 			} else {
-				services.AirShopping	= false
-				services.RQ_AirShopping_v17	= true
-				services.RS_AirShopping_v17	= true
+				services.AirShopping		= false
+				services.RQ_AirShopping_v17	= false
+				services.RS_AirShopping_v17	= false
 			}
 			
 			bagspre.split(",").each() {
