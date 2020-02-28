@@ -1936,6 +1936,7 @@ context.setProperty( objName, new LIB_AncillariesXMLs ( testRunner, context, log
  *	XML:
  *		- getOrder_XML
  *		- getServiceFee_XML
+ *		- round
  *		- getPayments_XML
  *		- getDataList_XML
  *		- getIdentityDocument_XML
@@ -2218,7 +2219,6 @@ class LIB_OrderCreateXMLs {
 		if ( 'to be automatically filled' == bagsAmount	) { bagsAmount	= '0.00'	}
 		if ( 'to be automatically filled' == seatsAmount	) { seatsAmount= '0.00'	}
 
-		logger.info "ENTRA"
 		def total			= Double.parseDouble( totalPriceOffer ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount ) + Double.parseDouble( specialNeedsAmount )
 		def totalPriceToPay	= round(total.toString()).toString()
 		
