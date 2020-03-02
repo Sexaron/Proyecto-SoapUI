@@ -2602,7 +2602,37 @@ class LIB_OrderReshopXMLs {
 
 final objName	= "cntx_ORXML"
 context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log) )
-	]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
+	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script>/*
+ *	XML:
+ *		- getReshop_XML
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_OrderChangeXMLs {
+
+	def public testRunner, context, logger
+			            	
+	def LIB_OrderChangeXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+
+		//Devuelve el XML del reshop
+	def getDataListsFromOrderView_XML( OrderView ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getDataListsFromOrderView_XML'
+
+		def iStart		= OrderView.indexOf('&lt;PassengerList>')
+		def iEnd			= OrderView.indexOf('&lt;/ContactList>') + 14
+		def dataLists_xml	= '&lt;DataLists>' + OrderView.substring(iStart,iEnd) + '&lt;/DataLists>'
+		return dataLists_xml.toString()
+	}
+}
+
+final objName	= "cntx_OCHXML"
+context.setProperty( objName, new LIB_OrderChangeXMLs ( testRunner, context, log) )
+	</script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
 		/*
 		 * 	cloud: https://api.iberia.com/iberia/cloud/ndc/AirShopping/15.2/v1
 		 * 	78213645 First in Service Spain
