@@ -692,6 +692,7 @@ context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]
  *		- getEMDS
  *		- getTotalPriceOfferFromOPDirect
  *		- getResponseID
+ *		- getTotalPriceOfferFromOrderView
  */
  
 import groovy.json.JsonSlurper
@@ -934,6 +935,18 @@ class Lib_GettingDataFromOfferID {
 		def responseID	= rs.ShoppingResponseID.ResponseID.toString()
 		
 		return responseID
+	}
+	
+
+		//Devuelve la cantidad total de la oferta a partir del XML de la respuesta del OrderRetrieve
+	def getTotalPriceOfferFromOrderView ( orderView ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getTotalPriceOffer'
+
+		def totalPriceOffer	= ''
+		def rs	= new XmlSlurper().parseText( orderView ).declareNamespace('ns2':'http://www.iata.org/IATA/EDIST')
+		totalPriceOffer	= rs.Body.OrderViewRS.Response.Order.TotalOrderPrice.DetailCurrencyPrice.Total.toString()
+		
+		return totalPriceOffer
 	}
 }
 
@@ -2602,37 +2615,57 @@ class LIB_OrderReshopXMLs {
 
 final objName	= "cntx_ORXML"
 context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log) )
-	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script>/*
+	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getReshop_XML
  */
 
 import groovy.json.JsonSlurper
+import groovy.xml.StreamingMarkupBuilder
 
 class LIB_OrderChangeXMLs {
+
+	def payerContact	=	"""		<ContactInformation ContactID="Payer">
+									<ContactType>Payer</ContactType>
+										<ContactProvided>
+											<EmailAddress>
+												<EmailAddressValue>[EMAILPAYER]</EmailAddressValue>
+											</EmailAddress>
+										</ContactProvided>
+									<IndividualRef>IND_ADULT_01</IndividualRef>
+								</ContactInformation>
+							</ContactList>"""
 
 	def public testRunner, context, logger
 			            	
 	def LIB_OrderChangeXMLs ( whichTestRunner, whichContext, whichLogger ){
-		this.logger	= whichLogger
-		this.context	= whichContext
-		this.testRunner = whichTestRunner
+		this.logger		= whichLogger
+		this.context		= whichContext
+		this.testRunner	= whichTestRunner
 	}
 
 		//Devuelve el XML del reshop
-	def getDataListsFromOrderView_XML( OrderView ) {
+	def getDataListsFromOrderView_XML( OrderView, emailPayer ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getDataListsFromOrderView_XML'
 
-		def iStart		= OrderView.indexOf('&lt;PassengerList>')
-		def iEnd			= OrderView.indexOf('&lt;/ContactList>') + 14
-		def dataLists_xml	= '&lt;DataLists>' + OrderView.substring(iStart,iEnd) + '&lt;/DataLists>'
-		return dataLists_xml.toString()
+		def iStart		= OrderView.indexOf('<PassengerList>')
+		def iEnd			= OrderView.indexOf('</ContactList>') + 14
+		def contactList_xml	= OrderView.substring(iStart,iEnd)	.replace( '</ContactList>'	, payerContact )
+													.replace( '[EMAILPAYER]'		, emailPayer	)
+		def dataLists_xml	= '<DataLists>' + contactList_xml + '</DataLists>'
+
+		def dataLists_slurper = new XmlSlurper().parseText(dataLists_xml)
+		dataLists_slurper.PassengerList.Passenger.find(){ it.@PassengerID.toString().equals('ADULT_01')}.Individual.@IndividualID = 'IND_ADULT_01'
+		def builder = new StreamingMarkupBuilder()
+		String xml = builder.bind{ mkp.yield dataLists_slurper }
+		
+		return xml
 	}
 }
 
 final objName	= "cntx_OCHXML"
 context.setProperty( objName, new LIB_OrderChangeXMLs ( testRunner, context, log) )
-	</script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
+	]]></script></con:config></con:testStep><con:testStep type="groovy" name="#### LISTS ###" id="4ed45b82-5eb9-49c6-b520-f7335a2612a3" disabled="true"><con:settings/><con:config><script/></con:config></con:testStep><con:testStep type="groovy" name="LST_IatasYApikeys" id="ab453f40-8048-4969-9add-ebd6717a5a83" disabled="true"><con:settings/><con:config><script>//######### Entorno PRO #########
 		/*
 		 * 	cloud: https://api.iberia.com/iberia/cloud/ndc/AirShopping/15.2/v1
 		 * 	78213645 First in Service Spain
