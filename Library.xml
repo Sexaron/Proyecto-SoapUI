@@ -693,6 +693,7 @@ context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]
  *		- getTotalPriceOfferFromOPDirect
  *		- getResponseID
  *		- getTotalPriceOfferFromOrderView
+ *		- getLstOfferItemIDFromOrderView
  */
  
 import groovy.json.JsonSlurper
@@ -909,8 +910,8 @@ class Lib_GettingDataFromOfferID {
 			}
 		}
 
-		emds	= emds.toString().replace('[', '')
-								.replace(']', '')
+		emds	= emds.toString()	.replace('[', '')
+							.replace(']', '')
 
 		if ( emds == '' ) {
 			emds = 'N/A'
@@ -940,13 +941,25 @@ class Lib_GettingDataFromOfferID {
 
 		//Devuelve la cantidad total de la oferta a partir del XML de la respuesta del OrderRetrieve
 	def getTotalPriceOfferFromOrderView ( orderView ) {
-		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getTotalPriceOffer'
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getTotalPriceOffer'
 
 		def totalPriceOffer	= ''
 		def rs	= new XmlSlurper().parseText( orderView ).declareNamespace('ns2':'http://www.iata.org/IATA/EDIST')
 		totalPriceOffer	= rs.Body.OrderViewRS.Response.Order.TotalOrderPrice.DetailCurrencyPrice.Total.toString()
 		
 		return totalPriceOffer
+	}
+
+		//Devuelve los offerItems de todos los pasajeros de la respuesta del OrderView
+	def getLstOfferItemIDFromOrderView( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getLstOfferItemIDFromOrderView'
+
+		def lstOfferItemID	= []
+		def lstPaxes		= []
+
+		
+
+		return [ lstOfferItemID, lstPaxes ]
 	}
 }
 
