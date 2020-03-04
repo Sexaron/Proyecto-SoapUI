@@ -694,6 +694,9 @@ context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]
  *		- getResponseID
  *		- getTotalPriceOfferFromOrderView
  *		- getLstOfferItemIDFromOrderView
+ *		- getLstPaxesFromOrderView
+ *		- getLstOfferItemIDAcceptFromOrderReshop
+ *		- getResponseIDFromOrderReshop
  */
  
 import groovy.json.JsonSlurper
@@ -955,11 +958,68 @@ class Lib_GettingDataFromOfferID {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getLstOfferItemIDFromOrderView'
 
 		def lstOfferItemID	= []
+
+		rs.Response.Order.OrderItems.OrderItem.each() {
+			if ( it.FareDetail.PassengerRefs.toString() != '' ) {
+				lstOfferItemID << it.@OrderItemID.toString()	
+			}
+		}	
+
+		return lstOfferItemID
+	}
+
+		//Devuelve lista de pasajeros a partir de la respuesta del OrderView
+	def getLstPaxesFromOrderView( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getLstPaxesFromOrderView'
+
 		def lstPaxes		= []
 
-		
+		rs.Response.Order.OrderItems.OrderItem.each() {
+			if ( it.FareDetail.PassengerRefs.toString() != '' ) {
+				lstPaxes << it.FareDetail.PassengerRefs.toString()
+			}
+		}		
 
-		return [ lstOfferItemID, lstPaxes ]
+		return lstPaxes
+	}
+
+		//Devuelve lista de offerItems accept a partir de la respuesta del OrderReshop
+	def getLstOfferItemIDAcceptFromOrderReshop( rs, lstOfferItemID_delete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getLstOfferItemIDAcceptFromOrderReshop'
+
+		def lstOfferItemID_accept	= []
+		
+		lstOfferItemID_delete	= lstOfferItemID_delete	.replace( '[', '')
+												.replace( ']', '')
+												.replace( ' ', '')
+		lstOfferItemID_delete	= lstOfferItemID_delete.split(',')
+
+
+		lstOfferItemID_delete.each() { offerToDelete ->
+			rs.Body.OrderReshopRS.Response.ReshopOffers.ReshopOffer.DeleteOfferItem.each() {
+				if ( it.@OrderItemID.toString().equals(offerToDelete) ) {	lstOfferItemID_accept << it.@OfferItemID.toString() }
+			}			
+		}		
+
+		return lstOfferItemID_accept
+	}
+
+		//Devuelve el responseID nuevo del OrderReshop
+	def getResponseIDFromOrderReshop( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getResponseIDFromOrderReshop'
+
+		def responseID	= rs.Body.OrderReshopRS.Response.ReShoppingResponseID.ResponseID.toString()	
+
+		return responseID
+	}
+
+		//Se obtiene el offerID del OrderReshop
+	def getOfferIDFromOrderReshop ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferIDFromOrderReshop'
+
+		def offerID = rs.Body.OrderReshopRS.Response.ReshopOffers.ReshopOffer.@OfferID.toString()
+
+		return offerID
 	}
 }
 
@@ -2631,6 +2691,7 @@ context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log
 	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getReshop_XML
+ *		- getOrderServicing_XML
  */
 
 import groovy.json.JsonSlurper
@@ -2638,16 +2699,45 @@ import groovy.xml.StreamingMarkupBuilder
 
 class LIB_OrderChangeXMLs {
 
-	def payerContact	=	"""		<ContactInformation ContactID="Payer">
-									<ContactType>Payer</ContactType>
-										<ContactProvided>
-											<EmailAddress>
-												<EmailAddressValue>[EMAILPAYER]</EmailAddressValue>
-											</EmailAddress>
-										</ContactProvided>
-									<IndividualRef>IND_ADULT_01</IndividualRef>
-								</ContactInformation>
-							</ContactList>"""
+	def payerContact_xml	=	"""	<ContactInformation ContactID="Payer">
+										<ContactType>Payer</ContactType>
+											<ContactProvided>
+												<EmailAddress>
+													<EmailAddressValue>[EMAILPAYER]</EmailAddressValue>
+												</EmailAddress>
+											</ContactProvided>
+										<IndividualRef>IND_ADULT_01</IndividualRef>
+									</ContactInformation>
+								</ContactList>"""
+
+	def orderServicing_xml	=	"""	<OrderServicing>
+									[ACCEPTOFFER]
+									[DELETE]
+								</OrderServicing>"""
+
+	def acceptOffer_xml		=	"""	<AcceptOffer>
+									[OFFER]
+								</AcceptOffer>"""
+
+	def offer_xml			= 	"""	<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]"> 
+									[OFFERITEMS]
+								</Offer>"""
+
+	def offerItems_xml		=	""" 	<OfferItem OfferItemID="[OFFERITEM]">
+									<PassengerRefs>[PAX]</PassengerRefs>
+								</OfferItem>"""
+
+	def delete_xml			=	"""	<Delete>
+									[ORDERITEMS]
+								</Delete>"""
+
+	def orderItemsDelete_xml	=	"""	<OrderItemID>[ORDERITEM]</OrderItemID>"""
+
+	def passenger_xml	=		"""	<Passenger PassengerID="[PAX]"/>"""
+	
+	def passengerList_xml	=	"""	<PassengerList>
+									[PASSENGERS]
+								</PassengerList>"""
 
 	def public testRunner, context, logger
 			            	
@@ -2673,6 +2763,79 @@ class LIB_OrderChangeXMLs {
 		String xml = builder.bind{ mkp.yield dataLists_slurper }
 		
 		return xml
+	}
+
+		//Devuelve el XML del OrderServicing
+	def getOrderServicing_XML( lstPaxes, lstOfferItemID_accept, lstOfferItemID_delete,
+							offerID, responseID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getOrderServicing_XML'
+
+		def orderServicing_XML	= ''
+		def offerItems_XML		= ''
+		def offer_XML			= ''
+		def acceptOffer_XML		= ''
+		def orderItemsDelete_XML	= ''
+		def delete_XML			= ''
+		
+		lstPaxes	= lstPaxes.replace( '[', '')
+						.replace( ']', '')
+						.replace( ' ', '')
+		lstPaxes	= lstPaxes.split(',')
+
+		lstOfferItemID_accept	= lstOfferItemID_accept	.replace( '[', '')
+												.replace( ']', '')
+												.replace( ' ', '')
+		lstOfferItemID_accept	= lstOfferItemID_accept.split(',')
+
+		lstOfferItemID_delete	= lstOfferItemID_delete	.replace( '[', '')
+												.replace( ']', '')
+												.replace( ' ', '')
+		lstOfferItemID_delete	= lstOfferItemID_delete.split(',')	
+
+
+			
+		lstPaxes.eachWithIndex() { pax, i ->
+			offerItems_XML	= offerItems_XML + offerItems_xml	.replace( '[OFFERITEM]'	, lstOfferItemID_accept[i].toString()	)
+													.replace( '[PAX]'		, pax.toString()					)
+		}
+
+		offer_XML	= offer_xml	.replace( '[OFFERID]'	, offerID			)
+							.replace(	'[RESPONSEID]'	, responseID		)
+							.replace(	'[OFFERITEMS]'	, offerItems_XML	)
+
+		acceptOffer_XML	= acceptOffer_xml	.replace( '[OFFER]'		, offer_XML		)
+
+		lstOfferItemID_delete.each() {
+			orderItemsDelete_XML	= orderItemsDelete_XML + orderItemsDelete_xml.replace( '[ORDERITEM]' , it.toString() )
+		}
+
+		delete_XML	= delete_xml.replace( '[ORDERITEMS]' , orderItemsDelete_XML )		
+
+		orderServicing_XML	= orderServicing_xml.replace( '[ACCEPTOFFER]', acceptOffer_XML 	)
+										.replace( '[DELETE]'	, delete_XML 		)
+
+		return orderServicing_XML
+	}
+
+		//Devuelve el XML del PassengerList
+	def getPassengerList_XML( lstPaxes ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getPassengerList_XML'
+
+		def passengerList_XML	= ''
+		def passengers_XML		= ''
+		
+		lstPaxes	= lstPaxes.replace( '[', '')
+						.replace( ']', '')
+						.replace( ' ', '')
+		lstPaxes	= lstPaxes.split(',')
+
+		lstPaxes.each() {
+			passengers_XML	= passengers_XML + passenger_xml.replace( '[PAX]', it.toString()	)
+		}
+
+		passengerList_XML	= passengerList_xml.replace( '[PASSENGERS]', passengers_XML	)
+		
+		return passengerList_XML
 	}
 }
 
