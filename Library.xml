@@ -2692,6 +2692,10 @@ context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log
  *	XML:
  *		- getReshop_XML
  *		- getOrderServicing_XML
+ *		- getPassengerList_XML
+ *		- getOriginalPassenger_XML
+ *		- getOriginalContactInf_XML
+ *		- getQueryAndDataLists_XML
  */
 
 import groovy.json.JsonSlurper
@@ -2738,6 +2742,46 @@ class LIB_OrderChangeXMLs {
 	def passengerList_xml	=	"""	<PassengerList>
 									[PASSENGERS]
 								</PassengerList>"""
+
+	def query_xml			=	"""	<Query>
+									<OrderID>[ORDERID]</OrderID>
+									<PassengerServicing>
+										[CONTACT]
+										[NEWPASSENGER]
+										[PREVPASSENGER]
+									</PassengerServicing>
+								</Query>"""
+
+	def newPassenger_xml	=	"""	<New PassengerID="[PAXID]">
+		                  				<Individual>
+		                    				<GivenName>[NAME]</GivenName>
+		                     				<Surname>[SURNAME]</Surname>
+		                  				</Individual>
+		                  				<ActionType>Add</ActionType>
+		               			</New>"""
+
+	def prevPassenger_xml	=	"""	<Previous PassengerID="[PAXID]">
+				                  		<Individual>
+				                     		<GivenName>[NAME]</GivenName>
+				                     		<Surname>[SURNAME]</Surname>
+				                  		</Individual>
+				                  		<ActionType>Delete</ActionType>
+				               	</Previous>"""
+               						
+	def newContact_xml		=	"""	<New PassengerID="[PAXID]">
+			               			<ContactInfoRef>PAX_MOD</ContactInfoRef>
+			                			<ActionType>Add</ActionType>
+			                		</New>"""
+
+	def dataLists_xml		=	"""	<DataLists>
+			        					<ContactList>            
+			           					<ContactInformation ContactID="PAX_MOD">
+			                						[PHONE]
+			                						[EMAIL]
+			            					</ContactInformation>
+			        					</ContactList>
+			    					</DataLists>"""
+			    													
 
 	def public testRunner, context, logger
 			            	
@@ -2836,6 +2880,100 @@ class LIB_OrderChangeXMLs {
 		passengerList_XML	= passengerList_xml.replace( '[PASSENGERS]', passengers_XML	)
 		
 		return passengerList_XML
+	}
+
+		//Devuelve el XML con los datos originales del pasajero
+	def getOriginalPassenger_XML ( paxToChange, rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getOriginalPassenger_XML'
+		
+		def paxToCh = rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.find(){
+			it.@PassengerID == paxToChange
+		}
+		
+		return paxToCh
+	}
+
+		//Devuelve el XML de la información de contacto originales del pasajero
+	def getOriginalContactInf_XML ( paxToChange, rs, originalPassenger_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getOriginalContactInf_XML'
+
+		def contactPaxToCh	= originalPassenger_XML.ContactInfoRef
+		def contactData 	= rs.Body.OrderViewRS.Response.DataLists.ContactList.ContactInformation.find(){
+			it.@ContactID == contactPaxToCh
+		}
+
+		return contactData
+	}
+
+		//Devuelve los XML de Query y DataLists para cambios de datos/información de pasajeros
+	def getQueryAndDataLists_XML ( paxToChange, newName, newSurname, newEmail, newPhone,
+								originalPassenger_XML, originalContactInf_XML, orderID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getQueryAndDataLists_XML'
+
+		def query_XML		= ''
+		def dataLists_XML	= ''
+		def contact_XML	= ''
+		def phone_XML		= ''
+		def email_XML		= ''
+		def newPassenger_XML	= ''
+		def prevPassenger_XML	= ''
+		def originName		= originalPassenger_XML.Individual.GivenName.toString()
+		def originSurname 	= originalPassenger_XML.Individual.Surname.toString()
+		def originPhone 	= originalContactInf_XML.ContactProvided.find() {
+							it.Phone.Label.toString() != ''
+						}.Phone.find(){
+							it.Label.toString().equals( 'Passenger')
+						}.PhoneNumber.toString()
+		def originEmail 	= originalContactInf_XML.ContactProvided.find() {
+							it.EmailAddress.EmailAddressValue.toString() != ''
+						}.EmailAddress.EmailAddressValue.toString()
+
+		
+		contact_XML =  newContact_xml.replace("[PAXID]", paxToChange)
+		logger.info contact_XML
+		
+		if ( newPhone != 'NO' ){	
+			phone_XML		= "<ContactProvided><Phone><PhoneNumber>" + newPhone + "</PhoneNumber></Phone></ContactProvided>"
+			dataLists_XML	=  dataLists_xml.replace( '[PHONE]', phone_XML )
+			logger.info '001 ' + dataLists_XML
+		} else {
+			dataLists_XML	=  dataLists_xml.replace( '[PHONE]', '' )
+		}	
+		
+		if ( newEmail != 'NO' ){	
+			email_XML	= "<ContactProvided><EmailAddress><EmailAddressValue>" + newEmail + "</EmailAddressValue></EmailAddress></ContactProvided>"
+			dataLists_XML =  dataLists_XML.replace( '[EMAIL]', email_XML)
+			logger.info '002 ' + dataLists_XML
+		} else {
+			dataLists_XML =  dataLists_XML.replace( '[EMAIL]', '')
+		}
+		
+		if ( newPhone != 'NO' || newEmail != 'NO' ) {
+			query_XML	= query_xml.replace( '[ORDERID]', orderID).replace( '[NEWPASSENGER]', '').replace( '[PREVPASSENGER]', '').replace( '[CONTACT]', contact_XML )
+		} else {
+			dataLists_XML =  ''
+		}
+		logger.info '003 ' + dataLists_XML
+		
+		if (newName != 'NO' || newSurname != 'NO'){
+			
+			if ( newName == 'NO') {
+				newName = originName
+			}
+		
+			if ( newSurname == 'NO' ) {
+				newSurname = originSurname
+			}
+			
+			newPassenger_XML	= newPassenger_xml.replace( '[PAXID]', paxToChange).replace( '[NAME]', newName).replace( '[SURNAME]', newSurname )
+			prevPassenger_XML	= prevPassenger_xml.replace( '[PAXID]', paxToChange).replace('[NAME]', originName).replace('[SURNAME]', originSurname )
+			query_XML = query_xml.replace( '[ORDERID]', orderID).replace( '[NEWPASSENGER]', newPassenger_XML).replace( '[PREVPASSENGER]', prevPassenger_XML).replace( '[CONTACT]', '' )
+		}
+		
+		logger.info query_XML
+		logger.info dataLists_XML
+
+		return [ query_XML, dataLists_XML ]
 	}
 }
 
