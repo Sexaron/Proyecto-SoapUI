@@ -1866,6 +1866,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 							bolSeatSelected	== false ) {
 								validSeats					= getValidSeats( rs, segm, seat_code, it.@OfferItemID.toString(), seatsSelected )
 								( seatSelected, bolSeatSelected )	= getSeat( validSeats )
+								seatsSelected << seatSelected
 								offerItemID	= it.@OfferItemID.toString()
 						}
 					}
@@ -1884,6 +1885,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 							bolSeatSelected	== false ) {
 								validSeats					= getValidSeats( rs, segm, seat_code, it.@OfferItemID.toString(), seatsSelected )
 								( seatSelected, bolSeatSelected )	= getSeat( validSeats )
+								seatsSelected << seatSelected
 								offerItemID	= it.@OfferItemID.toString()
 						}
 					}
@@ -1901,6 +1903,7 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 							bolSeatSelected	== false ) {
 								validSeats					= getValidSeats( rs, segm, seat_code, it.@OfferItemID.toString(), seatsSelected )
 								( seatSelected, bolSeatSelected )	= getSeat( validSeats )
+								seatsSelected << seatSelected
 								offerItemID	= it.@OfferItemID.toString()
 						}
 					}
@@ -1948,7 +1951,6 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 				}
 			}					
 		}
-
 		validSeats.removeAll(seatsSelected)
 		
 		return validSeats 
@@ -2018,6 +2020,432 @@ def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
 
 final objName	= "cntx_AXML"
 context.setProperty( objName, new LIB_AncillariesXMLs ( testRunner, context, log) )
+]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_AncillariesPostsale XMLs" id="0af5d6c6-17e1-4fa1-9d4f-fa658da8dfc8" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+ *	XML:
+ *		- getBagsOffer_XML
+ *		- getSeatsOffer_XML
+ *		- getValidSeats
+ *		- getSeat
+ *		- getSeatsOfferItem_XML
+ *		- getSeatOffer_XML
+ *		- getSeatsAmount
+ *		- getOfferItemsPostsale
+ *		- getOrderIDPostsale
+ *		- getNumADTAndCHD
+ *		- getSegmentLst
+ *		- getSegmentLstV2
+ */
+
+import groovy.json.JsonSlurper
+
+class LIB_AncillariesPostsaleXMLs {
+	
+	//XMLs							
+def offerAnc_XML	= """	<Offer OfferID="[OFFER]" Owner="IB" ResponseID="[RESPONSEID]">
+							[OFFERSANC]
+						</Offer>"""
+
+def offerItem_XML	= """	<OfferItem OfferItemID="[OFFERITEM]">
+                     			<PassengerRefs>[TAG]</PassengerRefs>
+                  			</OfferItem>"""
+
+def seat_XML		= """	<OfferItem OfferItemID="[OFFERITEM]">
+							<PassengerRefs>[TAG]</PassengerRefs>
+							<ALaCarteSelection>
+								<Quantity>1</Quantity>
+								<SegmentID>[SEGMENT]</SegmentID>
+							</ALaCarteSelection>
+							<SeatSelection>
+								<Row>[ROW]</Row>
+								<Column>[COLUMN]</Column>
+							</SeatSelection>
+						</OfferItem>"""
+						
+	def public testRunner, context, logger
+
+	def LIB_AncillariesPostsaleXMLs ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	= whichLogger
+		this.context	= whichContext
+		this.testRunner = whichTestRunner
+	}
+
+		//Devuelve XML del offer de maletas
+	def getBagsOffer_XML( rs, nADT, nCHD, bags, segmentLstV2 ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getBagsOffer_XML'
+		
+		def bagsOffer_XML	= ''
+		def offersBaggage_xml	= ''
+		def bagsAmount		= 0.00
+		def bagPrice		= 0.00
+		def item			= ''
+		def numRoutes		= segmentLstV2.toString().split('],').size()
+		bags				= bags.split(',')
+
+		segmentLstV2		= segmentLstV2	.replace( '[' , '' )
+									.replace( ']]', '' )
+		segmentLstV2		= segmentLstV2.split('], ')
+		
+		assert rs.Body.ServiceListRS.ALaCarteOffer.size() > 0 : 'No hay disponible servicios de maleta'
+		
+		def orderID	= rs.Body.ServiceListRS.ALaCarteOffer.@OfferID.toString()
+		def responseID	= rs.Body.ServiceListRS.ShoppingResponseID.ResponseID.toString()
+		
+		def offers		= rs.Body.ServiceListRS.ALaCarteOffer
+		def offerIDBaggage	= offers.@OfferID.toString()
+		def idx			= 0
+		
+		bags.each {				
+			if ( it != "NO") {
+				
+				assert bags.size() == numRoutes, 'ERROR: El numero de rutas no coincide con el número de valores dado en la propiedad \'anc_bags\'.' 
+				
+				def optSelected = it.toString()
+				
+				if ( optSelected == "firstsvc" )	{	optSelected = "1" }
+				else 						{	optSelected = it.toString() }
+				
+				def auxSegment	= segmentLstV2[idx].substring(0,14)
+				
+				for ( int i = 0; i < nADT.toInteger(); i++ ){
+					def adult	= "ADULT_0" + (i+1)
+					def offerItem	= ""
+					def offerADT	= ""
+					offers.ALaCarteOfferItem.each { offer ->
+						if (	offer.Eligibility.PassengerRefs.toString().contains(adult.toString()) && 
+							offer.Eligibility.SegmentRefs.toString().contains(auxSegment.toString()) &&
+							offer.Service.ServiceDefinitionRef.toString().contains(optSelected.toString()) ) {
+								offerADT 		= offer.@OfferItemID.toString()
+								bagPrice		= Double.parseDouble(offer.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toString())
+								bagsAmount 	= bagsAmount + bagPrice
+						}
+					}	
+					
+					assert offerADT != '', "ERROR: Pasajero: $adult / Segmento: [$idx]$auxSegment -> No se ha encontrado servicio de maleta"
+					
+					offersBaggage_xml = offersBaggage_xml + offerItem_XML	.replace("[OFFERITEM]", offerADT)
+																.replace("[TAG]", adult)
+				}
+	
+				for ( int i = 0; i < nCHD.toInteger(); i++ ){
+					def child	= "CHILD_0" + (i+1)
+					def offerItem	= ""
+					def offerCHD	= ""
+					
+					offers.ALaCarteOfferItem.each(){ offer ->
+						if (	offer.Eligibility.PassengerRefs.toString().contains(child.toString()) && 
+							offer.Eligibility.SegmentRefs.toString().contains(auxSegment.toString()) &&
+							offer.Service.ServiceDefinitionRef.toString().contains(optSelected.toString()) ) {
+								offerCHD = offer.@OfferItemID.toString()							
+								bagPrice		= Double.parseDouble(offer.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toString())
+								bagsAmount 	= bagsAmount + bagPrice
+						}
+					}
+
+					assert offerCHD != '', "ERROR: Pasajero: $child / Segmento: [$idx]$auxSegment -> No se ha encontrado servicio de maleta"
+					
+					offersBaggage_xml = offersBaggage_xml + offerItem_XML	.replace("[OFFERITEM]", offerCHD)
+																.replace("[TAG]", child)
+				}																		     
+			}
+			idx++
+		}
+		
+		bagsOffer_XML = offerAnc_XML	.replace("[OFFER]"		, orderID			)
+								.replace("[RESPONSEID]"	, responseID		)
+								.replace("[OFFERSANC]"	, offersBaggage_xml	)		
+		
+		return [ bagsOffer_XML, bagsAmount.toString() ]
+	}
+
+		//Devuelve XML del offer de asientos
+	def getSeatsOffer_XML( rs, nADT, nCHD, seats, seat_code, 
+						segmentLst, segmentLstV2 ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSeatsOffer_XML'
+
+		assert rs.Body.SeatAvailabilityRS.ALaCarteOffer.size() > 0, "ERROR: NO hay servicios de asientos disponibles"
+		
+		def seatsOffer_XML 		= ''
+		def seatsOfferItem_XML 	= ''
+		def seatsAmount		= 0.00
+		def auxPrice			= 0.00
+		def lstPAX			= []
+		def segmentsWithSeat	= []
+		def validSeats			= []
+		def offerItemID		= ''
+		def seatsSelected		= []
+		def seatSelected		= ''
+		def bolSeatSelected		= false
+
+		def offerID	= rs.Body.SeatAvailabilityRS.ALaCarteOffer.@OfferID.toString()
+		def responseID	= rs.Body.SeatAvailabilityRS.ShoppingResponseID.ResponseID.toString()
+
+		(1..nADT.toInteger()).each() { 
+			lstPAX << 'ADULT_0' + it
+		}
+
+		(1..nCHD.toInteger()).each() { 
+			lstPAX << 'CHILD_0' + it
+		}
+
+			//Para saber el número de rutas con solo segmentLstV2
+		segmentLstV2		= segmentLstV2	.replace( '[' , '' )
+									.replace( ']]', '' )
+		segmentLstV2		= segmentLstV2.split('], ')
+		def numRoutes		= segmentLstV2.size()
+			/////////////////////////////////////////////////////
+			
+		seats	= seats.split(',')
+
+			//Se crea lista con los segmentos que llevarán asientos
+		if ( seats.size() == numRoutes ) { 
+			segmentLstV2.each() {
+				segmentsWithSeat	<< it.substring(0,14)
+			}			
+		} else {
+			segmentsWithSeat	= segmentLst.split(', ')
+		}
+			///////////////////////////////////////////////////////
+
+		segmentsWithSeat.eachWithIndex() { segm, idx ->
+			def optionSeleced	= seats[idx].toString().toUpperCase()
+			seatsSelected		= []
+			if( optionSeleced == 'PAY' || optionSeleced == 'PAGO' || optionSeleced == 'P' ) {
+				lstPAX.each() { pax ->
+					bolSeatSelected	= false
+					validSeats		= []
+					rs.Body.SeatAvailabilityRS.ALaCarteOffer.ALaCarteOfferItem.each(){
+						if (	it.Eligibility.PassengerRefs.toString().contains(pax) 	&&
+							it.Eligibility.SegmentRefs.toString().equals(segm)	&&
+							it.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toDouble() > 0.00 &&
+							bolSeatSelected	== false ) {
+								validSeats					= getValidSeats( rs, segm, seat_code, it.@OfferItemID.toString(), seatsSelected )
+								( seatSelected, bolSeatSelected )	= getSeat( validSeats )
+								seatsSelected << seatSelected
+								offerItemID	= it.@OfferItemID.toString()
+						}
+					}
+					assert seatSelected != '', "ERROR: Pasajero: $pax / Segmento: [$idx]$segm / Code: $seat_code  -> No se han encontrado asientos de pago disponibles"
+					seatsOfferItem_XML	= getSeatsOfferItem_XML( seatsOfferItem_XML, segm, pax, seatSelected, offerItemID )
+					seatsAmount	= getSeatsAmount ( rs, seatsAmount, offerItemID )
+				}				
+			} else if ( optionSeleced == 'FREE' || optionSeleced == 'GRATIS' || optionSeleced == 'F' || optionSeleced == 'G' ) {
+				lstPAX.each() { pax ->
+					bolSeatSelected	= false
+					validSeats		= []
+					rs.Body.SeatAvailabilityRS.ALaCarteOffer.ALaCarteOfferItem.each(){
+						if (	it.Eligibility.PassengerRefs.toString().contains(pax) 	&&
+							it.Eligibility.SegmentRefs.toString().equals(segm)	&&
+							it.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toDouble() == 0.00 &&
+							bolSeatSelected	== false ) {
+								validSeats					= getValidSeats( rs, segm, seat_code, it.@OfferItemID.toString(), seatsSelected )
+								( seatSelected, bolSeatSelected )	= getSeat( validSeats )
+								seatsSelected << seatSelected
+								offerItemID	= it.@OfferItemID.toString()
+						}
+					}
+					assert seatSelected != '', "ERROR: Pasajero: $pax / Segmento: [$idx]$segm / Code: $seat_code  -> No se han encontrado asientos gratis disponibles"
+					seatsOfferItem_XML	= getSeatsOfferItem_XML( seatsOfferItem_XML, segm, pax, seatSelected, offerItemID )
+					seatsAmount	= getSeatsAmount ( rs, seatsAmount, offerItemID )
+				}
+			} else if ( optionSeleced == 'ANY' || optionSeleced == 'CUALQUIERA' || optionSeleced == 'A' || optionSeleced == 'C' ) {
+				lstPAX.each() { pax ->
+					bolSeatSelected	= false
+					validSeats		= []
+					rs.Body.SeatAvailabilityRS.ALaCarteOffer.ALaCarteOfferItem.each(){
+						if (	it.Eligibility.PassengerRefs.toString().contains(pax) 	&&
+							it.Eligibility.SegmentRefs.toString().equals(segm)	&&
+							bolSeatSelected	== false ) {
+								validSeats					= getValidSeats( rs, segm, seat_code, it.@OfferItemID.toString(), seatsSelected )
+								( seatSelected, bolSeatSelected )	= getSeat( validSeats )
+								seatsSelected << seatSelected
+								offerItemID	= it.@OfferItemID.toString()
+						}
+					}
+					assert seatSelected != '', "ERROR: Pasajero: $pax / Segmento: [$idx]$segm / Code: $seat_code  -> No se han encontrado asientos (ni gratis/ni de pago) disponibles"
+					seatsOfferItem_XML	= getSeatsOfferItem_XML( seatsOfferItem_XML, segm, pax, seatSelected, offerItemID )
+					seatsAmount	= getSeatsAmount ( rs, seatsAmount, offerItemID )
+				}
+			} else {
+				logger.warn "Para el segmento [$idx]$segm no se han pedido servicio de asientos"
+			}
+		}
+
+		seatsOffer_XML	= getSeatOffer_XML( offerID, responseID, seatsOfferItem_XML )
+		
+		return [ seatsOffer_XML, seatsAmount.toString() ]
+	}
+
+		//Se obtiene los asientos válidos para el pasajero para el OfferItem pasado por párametro
+	def getValidSeats ( rs, segm, seat_code, offerItemID, seatsSelected ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSeatsOffer_XML/getValidSeats'
+
+		def validSeats	= []
+		def validRows	= []
+		def seatCodes	= []
+		
+		def seatMap	= rs.Body.SeatAvailabilityRS.SeatMap.find() {
+			it.SegmentRef.toString().equals(segm)
+		}
+
+		seatMap.Cabin.Row.each() { row ->
+			row.Seat.each() { seat ->
+				seatCodes	= []
+				seat.SeatCharacteristics.Code.each(){
+					seatCodes	<< it.toString()
+				}
+
+				if ( 'NO' == seat_code ) { 
+					if ( seat.OfferItemRefs.toString().contains(offerItemID)  ) {
+						validSeats << ( row.Number.toString() + seat.Column.toString() )
+					}
+				} else {
+					if ( seat.OfferItemRefs.toString().contains(offerItemID) && seatCodes.contains(seat_code)  ) {
+						validSeats << ( row.Number.toString() + seat.Column.toString() )
+					}
+				}
+			}					
+		}
+		validSeats.removeAll(seatsSelected)
+		
+		return validSeats 
+	}
+
+		//Se obtiene un asiento aleatorio de los válidos obtenidos anteriormente
+	def getSeat( validSeats ){
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSeatsOffer_XML/getSeat'
+
+		def rnd	= new Random()
+		def seatSelected
+		def bolSeatSelected
+
+		if ( '' != validSeats && null != validSeats ) {
+			seatSelected		= validSeats[ rnd.nextInt( validSeats.size() ) ]
+			bolSeatSelected	= true
+		} else {
+			bolSeatSelected	= false
+		}
+		
+		return [ seatSelected, bolSeatSelected ]
+	}
+
+		//Se crea XML de los offerItems para asientos
+	def getSeatsOfferItem_XML( seatsOfferItem_XML, segm, pax, seatSelected, offerItemID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSeatsOffer_XML/getSeatsOfferItem_XML'
+
+		def numRow	= ''
+		def column	= ''
+		def iCulumn	= ( seatSelected.size()-1 )
+		column	= seatSelected.substring(iCulumn)
+		numRow	= seatSelected.substring(0, iCulumn)
+
+		seatsOfferItem_XML	= seatsOfferItem_XML + seat_XML	.replace( '[OFFERITEM]'	, offerItemID 	)
+													.replace( '[TAG]'		, pax 		)
+													.replace( '[SEGMENT]'	, segm		)
+													.replace( '[ROW]', 		, numRow		)
+													.replace( '[COLUMN]'	, column 		)
+		
+		return seatsOfferItem_XML
+	}
+
+		//Se crea XML del Offer con todos los offerItems de los asientos
+	def getSeatOffer_XML ( offerID, responseID, seatsOfferItem_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSeatsOffer_XML/getSeatOffer_XML'
+
+		def seatOffer_XML	= offerAnc_XML	.replace( '[OFFER]'		, offerID			)
+									.replace( '[RESPONSEID]'	, responseID		)
+									.replace( '[OFFERSANC]'	, seatsOfferItem_XML)
+		
+		return seatOffer_XML
+	}
+
+		//Se obtiene el precio del asiento y se añade al total de asientos
+	def getSeatsAmount( rs, seatsAmount, offerItemID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSeatsOffer_XML/getSeatsAmount'
+
+		def seatPrice	= rs.Body.SeatAvailabilityRS.ALaCarteOffer.ALaCarteOfferItem.find() {
+			it.@OfferItemID.toString().equals(offerItemID)
+		}.UnitPriceDetail.TotalAmount.SimpleCurrencyPrice.toString()
+
+		seatsAmount	= seatsAmount + Double.parseDouble(seatPrice)		
+		
+		return seatsAmount
+	}
+
+		//Devuelve los offerItems correspondientes a cada tipo de pasajero a partir del OrderView
+	def getOfferItemsPostsale( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getOfferItemsPostsale'
+
+		def offerItemID_ADT	= ''
+		def offerItemID_CHD	= ''
+		def offerItemID_INF	= ''
+
+		offerItemID_ADT	= rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.find() {
+			it.Service.PassengerRef.toString().contains( 'ADULT' )
+		}.@OrderItemID.toString()
+
+		offerItemID_CHD	= rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.find() {
+			it.Service.PassengerRef.toString().contains( 'CHILD' )
+		}.@OrderItemID.toString()
+
+		offerItemID_INF	= rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.find() {
+			it.Service.PassengerRef.toString().contains( 'INFANT' )
+		}.@OrderItemID.toString()
+
+		
+		return [ offerItemID_ADT, offerItemID_CHD, offerItemID_INF ]
+	}
+
+		//Devuelve ResponseID a partir del OrderView
+	def getOrderIDPostsale( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getOrderIDPostsale'
+
+		def orderID	= rs.Body.OrderViewRS.Response.Order.@OrderID.toString()
+		
+		return orderID
+	}
+
+		//Devuelve el número de Adults y Childs de la reserva a partir del OrderView
+	def getNumADTAndCHD( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getNumADTAndCHD'
+
+		def nADT	= rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.findAll() {
+			it.@PassengerID.toString().contains( 'ADULT' )
+		}.size().toString()
+
+		def nCHD	= rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.findAll() {
+			it.@PassengerID.toString().contains( 'CHILD' )
+		}.size().toString()
+		
+		return [ nADT, nCHD ]
+	}
+
+		//Devuelve lista de segmentos, incluyendo escalas, a partir del OrderView
+	def getSegmentLst( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSegmentLst'
+
+		def segmentLst	= []
+		rs.Body.OrderViewRS.Response.DataLists.FlightList.Flight.each() {
+			segmentLst	<< it.SegmentReferences.toString()	.replace( ' ', ', ' )
+		}
+		
+		return segmentLst
+	}
+
+		//Devuelve el array de segmentos, incluyendo escalas, a partir del OrderView
+	def getSegmentLstV2( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_AncillariesPostsale XMLs/getSegmentLstV2'
+
+		def segmentLstV2	= []
+		rs.Body.OrderViewRS.Response.DataLists.FlightList.Flight.each() {
+			segmentLstV2	<< '[' + it.SegmentReferences.toString().replace( ' ', ', ' ) + ']'
+		}
+		
+		return segmentLstV2.toString()
+	}
+}
+
+final objName	= "cntx_APXML"
+context.setProperty( objName, new LIB_AncillariesPostsaleXMLs ( testRunner, context, log) )
 ]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderCreate XMLs" id="a1324941-43a4-4b49-98ca-a2b61a733d9c" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getOrder_XML
@@ -2696,6 +3124,9 @@ context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log
  *		- getOriginalPassenger_XML
  *		- getOriginalContactInf_XML
  *		- getQueryAndDataLists_XML
+ *		- round
+ *		- getPaymentAncillaries_XML
+ *		- getQueryOCH_XML
  */
 
 import groovy.json.JsonSlurper
@@ -2781,7 +3212,18 @@ class LIB_OrderChangeXMLs {
 			            					</ContactInformation>
 			        					</ContactList>
 			    					</DataLists>"""
-			    													
+
+	def queryOCH_xml		=	"""	<Query>
+									<OrderID>[ORDERID]</OrderID>
+									<OrderServicing>
+										<AcceptOffer>
+											[BAGSOFFER]
+											[SEATSOFFER]
+										</AcceptOffer>
+									<OrderServicing>
+									[PAYMENTS]
+								</Query>"""
+				    													
 
 	def public testRunner, context, logger
 			            	
@@ -2930,12 +3372,10 @@ class LIB_OrderChangeXMLs {
 
 		
 		contact_XML =  newContact_xml.replace("[PAXID]", paxToChange)
-		logger.info contact_XML
 		
 		if ( newPhone != 'NO' ){	
 			phone_XML		= "<ContactProvided><Phone><PhoneNumber>" + newPhone + "</PhoneNumber></Phone></ContactProvided>"
 			dataLists_XML	=  dataLists_xml.replace( '[PHONE]', phone_XML )
-			logger.info '001 ' + dataLists_XML
 		} else {
 			dataLists_XML	=  dataLists_xml.replace( '[PHONE]', '' )
 		}	
@@ -2943,7 +3383,6 @@ class LIB_OrderChangeXMLs {
 		if ( newEmail != 'NO' ){	
 			email_XML	= "<ContactProvided><EmailAddress><EmailAddressValue>" + newEmail + "</EmailAddressValue></EmailAddress></ContactProvided>"
 			dataLists_XML =  dataLists_XML.replace( '[EMAIL]', email_XML)
-			logger.info '002 ' + dataLists_XML
 		} else {
 			dataLists_XML =  dataLists_XML.replace( '[EMAIL]', '')
 		}
@@ -2953,7 +3392,6 @@ class LIB_OrderChangeXMLs {
 		} else {
 			dataLists_XML =  ''
 		}
-		logger.info '003 ' + dataLists_XML
 		
 		if (newName != 'NO' || newSurname != 'NO'){
 			
@@ -2969,11 +3407,60 @@ class LIB_OrderChangeXMLs {
 			prevPassenger_XML	= prevPassenger_xml.replace( '[PAXID]', paxToChange).replace('[NAME]', originName).replace('[SURNAME]', originSurname )
 			query_XML = query_xml.replace( '[ORDERID]', orderID).replace( '[NEWPASSENGER]', newPassenger_XML).replace( '[PREVPASSENGER]', prevPassenger_XML).replace( '[CONTACT]', '' )
 		}
-		
-		logger.info query_XML
-		logger.info dataLists_XML
 
 		return [ query_XML, dataLists_XML ]
+	}
+
+		//Eliminar decimales del importe y dejarlo solo con nada más que dos.
+	def round(numberStr){
+  		return Math.round(Double.parseDouble(numberStr) * 100) / 100
+	}
+	
+		//Devuelve el XML del Payment para ancillaries Postventa
+	def getPaymentAncillaries_XML ( mashery, version, paymentMethod_order, currency, totalPriceOffer,
+					 bagsAmount, seatsAmount, emailPayer, cardNum, cardType, TestSteps, 
+					 maskedCreditCard, tokenizedCreditCard, serviceFee_XML,
+					 specialNeedsAmount ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getPaymentAncillaries_XML'
+
+		def payments_XML		= ''
+		
+		if ( 'CASH' == paymentMethod_order ) {
+			payments_XML	= TestSteps.getPropertyValue("CASH_ORDERCREATE_v$version")
+		} else {
+			payments_XML	= TestSteps.getPropertyValue("${mashery}_MASHERY_CC_ORDERCREATE_v$version")
+		}
+
+		if ( 'to be automatically filled' == bagsAmount	) { bagsAmount	= '0.00'	}
+		if ( 'to be automatically filled' == seatsAmount	) { seatsAmount= '0.00'	}
+
+		def total			= Double.parseDouble( totalPriceOffer ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount ) + Double.parseDouble( specialNeedsAmount )
+		def totalPriceToPay	= round(total.toString()).toString()
+		
+		payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
+								.replace( '[AMOUNT]'			, totalPriceToPay 		)
+								.replace( '[CARDTYPE]'			, cardType	 		)
+								.replace( '[CARDNUM]'			, cardNum	 			)
+								.replace( '[EMAILPAYER]'			, emailPayer 			)
+								.replace( '[SERVICEFEE]'			, serviceFee_XML 		)
+								.replace( '[MASKEDCREDITCARD]'	, maskedCreditCard 		)
+								.replace( '[TOKENIZEDCREDITCARD]'	, tokenizedCreditCard 	)
+								
+		return [ payments_XML, totalPriceToPay ]
+	}
+
+		//Devuelve el XML de Query para ancillaries Postventa
+	def getQueryOCH_XML ( orderID, bagsOffer_XML, seatsOffer_XML, payments_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getQueryOCH_XML'
+
+		def queryOCH_XML = ''
+
+		queryOCH_XML	= queryOCH_xml	.replace( '[ORDERID]'	, orderID 		)
+								.replace( '[BAGSOFFER]'	, bagsOffer_XML 	)
+								.replace( '[SEATSOFFER]'	, seatsOffer_XML 	)
+								.replace( '[PAYMENTS]'	, payments_XML 	)
+
+		return queryOCH_XML
 	}
 }
 
