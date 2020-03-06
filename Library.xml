@@ -3118,7 +3118,7 @@ final objName	= "cntx_ORXML"
 context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log) )
 	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
- *		- getReshop_XML
+ *		- getDataListsFromOrderView_XML
  *		- getOrderServicing_XML
  *		- getPassengerList_XML
  *		- getOriginalPassenger_XML
@@ -3220,7 +3220,7 @@ class LIB_OrderChangeXMLs {
 											[BAGSOFFER]
 											[SEATSOFFER]
 										</AcceptOffer>
-									<OrderServicing>
+									</OrderServicing>
 									[PAYMENTS]
 								</Query>"""
 				    													
@@ -3239,10 +3239,9 @@ class LIB_OrderChangeXMLs {
 
 		def iStart		= OrderView.indexOf('<PassengerList>')
 		def iEnd			= OrderView.indexOf('</ContactList>') + 14
-		def contactList_xml	= OrderView.substring(iStart,iEnd)	.replace( '</ContactList>'	, payerContact )
+		def contactList_xml	= OrderView.substring(iStart,iEnd)	.replace( '</ContactList>'	, payerContact_xml )
 													.replace( '[EMAILPAYER]'		, emailPayer	)
 		def dataLists_xml	= '<DataLists>' + contactList_xml + '</DataLists>'
-
 		def dataLists_slurper = new XmlSlurper().parseText(dataLists_xml)
 		dataLists_slurper.PassengerList.Passenger.find(){ it.@PassengerID.toString().equals('ADULT_01')}.Individual.@IndividualID = 'IND_ADULT_01'
 		def builder = new StreamingMarkupBuilder()
