@@ -3082,6 +3082,18 @@ class LIB_OrderReshopXML {
 
 	def orderItem_xml		=	"""	<OrderItem OrderItemID="[ORDERITEM]"/>"""
 
+	def add_xml			= 	"""	<Add>
+									[FLIGHTQUERY]
+									[PREFERENCES]
+									[PASSENGERS]
+								</Add>"""
+
+	def flightQuery_xml		= 	"""	<FlightQuery>
+									<OriginDestinations>
+										[ORIDES]
+									</OriginDestinations>
+								</FlightQuery>"""	
+						
 	def originDestination_xml=	"""	<OriginDestination>
 									<Departure>
 										<AirportCode>[ORI]</AirportCode>
@@ -3098,7 +3110,37 @@ class LIB_OrderReshopXML {
 									<FlightNumber>[FLIGHTNUM]</FlightNumber>
 								</MarketingCarrierAirline>"""
 
+	def passengers_xml		=	"""	<Passengers>
+									<PassengerReferences>[PAXES]</PassengerReferences>
+								</Passengers>"""
 
+	def cabin_xml			=	"""	<Preference>
+									<CabinPreferences>
+										<CabinType>
+											<Code>[CABIN]</Code>
+										</CabinType>
+									</CabinPreferences>
+								</Preference>"""
+
+	def privates_xml		= 	"""	<Preference>
+				                        <FarePreferences>
+				                           <Types>
+				                              <Type PreferencesContext="[PRODUCT]">758</Type>
+				                           </Types>
+				                        </FarePreferences>
+				                     </Preference>"""
+				                     
+	def delete_xml			=   """	<Delete>
+									[ORDERITEMS]
+								  </Delete>"""
+						  
+	def orderItemAllRoutes_xml	=	"""	<OrderItem OrderItemID="[ORDERITEM]"/>"""
+
+	def orderItemSomeRoutes_xml	=	"""	<OrderItem OrderItemID="[ORDERITEM]">
+										[SERVICES]
+									</OrderItem>"""
+
+	def service_xml		=	"""	<ServiceRetainRequestIDs>[SERVICE]</ServiceRetainRequestIDs>"""
 
 								
 
@@ -3243,7 +3285,6 @@ class LIB_OrderReshopXML {
 				}
 			//#####################
 		
-			logger.info "numRoutes = $numRoutes"
 			(1..numRoutes).each { i ->
 				oriDesAndDate			= getOriDesAndDate( rs, routeSegmentLst[i-1] )
 				originDestination_XML	= originDestination_XML + getOriDesXML( oriDesAndDate, i-1, dateLst, flightNumLst, marketingCarriers )
@@ -3253,30 +3294,203 @@ class LIB_OrderReshopXML {
 		
 			//#####  ASSERTS  #####*/
 				routesToChange.each {
-					assert it.toString().toInteger() > 0 && it.toString().toInteger() < 15, "ERROR: Value not valid for the field 'routeToChange'. Check it."	
+					assert it.toString().toInteger() > 0 && it.toString().toInteger() < 15, "ERROR: Valor no válido para la propertie 'routeToChange'"	
 				}
 		
 				if ( dateLst.toString() != "[NO]" ) {
-					assert routesToChange.size() == dateLst.toString().split(',').size(), "ERROR: The number of values in the 'newDates' property does not correspond to the number of values in the 'routesToChange' property. Check it."
+					assert routesToChange.size() == dateLst.toString().split(',').size(), "ERROR: El número de valores en la propertie 'newDates' no se corresponde con el número de valores de la propertie 'routesToChange'"
 				}
 				
 				if ( flightNumLst.toString() != "[NO]" ) {
-					assert routesToChange.size() == flightNumLst.toString().split(',').size(), "ERROR: The number of values in the 'newFlightNumbers' property does not correspond to the number of values in the 'routesToChange' property. Check it."
+					assert routesToChange.size() == flightNumLst.toString().split(',').size(), "ERROR: El número de valores en la propertie 'newFlightNumbers' no se corresponde con el número de valores en la propertie 'routesToChange'"
 				}
 			//#####################
 		
 			
 			routesToChange.eachWithIndex { route, i ->
-				log.info numRoutes
-				assert route.toInteger() <= numRoutes, "ERROR: Value in the 'routesToChange' property is not correct. Check it."
+				assert route.toInteger() <= numRoutes, "ERROR: El valor dado en la propertie 'routesToChange' no es válido"
 				auxRoute	= route.toInteger()
 				oriDesAndDate	= getOriDesAndDate( routeSegmentLst[auxRoute-1] )
 				getOriDesXML( oriDesAndDate, i )
 			}
 		}
+		
+		return originDestination_XML
+	}
 
-		logger.info originDestination_XML
-		return 'LLEGA'
+		//Devuelve XML con las referencias de los pasajeros a los que se pretenden cambiar
+	def getPassengers_XML( rs, paxToChange ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getPassengers_XML'
+
+		def paxes			= []
+		def paxesLst		= ''
+		def passengers_XML	= ''
+		
+		if ( paxToChange == 'ALL' ) {
+			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
+				paxes	<< it.@PassengerID.toString()	
+			}
+			paxes.each {
+				paxesLst = paxesLst + " " + it.toString()
+			}
+		} else {
+			paxToChange.split(',').each {
+				paxesLst	= paxesLst + " " + it.toString()
+			}
+		}
+		
+		paxesLst	= paxesLst.substring(1)
+		passengers_XML	= passengers_xml.replace( '[PAXES]', paxesLst )
+		
+		return passengers_XML
+	}
+
+		//Devuelve XML con las preferencias del cambio
+	def getPreferences_XML( product, newCabin ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getPreferences_XML'
+
+		def private_XML	= ''
+		def cabin_XML		= ''
+		
+		if ( newCabin == 'NO' || newCabin == '' ) {
+			cabin_XML	= ''
+		} else {
+			cabin_XML	= cabin_xml.replace( '[CABIN]', newCabin )
+		}
+	
+		if ( product == 'NO' || product == '' ) {
+			private_XML	= ''
+		} else {
+			private_XML	= private_xml.replace( '[PRODUCT]', product )
+		}
+	
+		def preferences_XML	= private_XML + cabin_XML
+		
+		return preferences_XML
+	}
+
+		//Devuelve XML de Add
+	def getAdd_XML( originDestination_XML, passengers_XML, preferences_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getAdd_XML'
+
+		def flightQuery_XML	= flightQuery_xml	.replace( '[ORIDES]'	, originDestination_XML 	) 
+		def add_XML		= add_xml			.replace( '[FLIGHTQUERY]', flightQuery_XML 		)
+										.replace( '[PREFERENCES]', preferences_XML 		)
+										.replace( '[PASSENGERS]'	, passengers_XML 		)
+		
+		return add_XML
+	}
+
+
+		//Devuelve XML de Delete
+	def getDelete_XML( rs, paxToChange, routesToChange, routeSegmentLst ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getDelete_XML'
+
+		def delete_XML			= ''
+		def paxes				= []	
+		def serviceLstPerPax	= []
+		def oItem				= ''
+		def serviceID			= ''
+		def orderItems_XML		= ''
+		
+		if ( paxToChange == 'ALL' ) {
+			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
+				paxes	<< it.@PassengerID.toString()	
+			}
+		} else {
+			paxes	= paxToChange.split(',')
+		}
+		
+		rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.each { orderItem ->
+			paxes.each { pax ->
+				orderItem.Service.each {
+					if (it.PassengerRef.toString().equals(pax.toString()) ) {
+						serviceLstPerPax << it
+					}
+				}			
+			}
+		}
+		
+		if ( routesToChange == 'ALL' ) {
+			paxes.each { pax ->
+				rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.each { orderItem ->
+					if ( orderItem.Service[0].PassengerRef.toString().equals(pax) && !orderItem.PriceDetail.TotalAmount.toString().equals('') ) {
+						oItem	= orderItem.@OrderItemID.toString()
+					}
+				}
+			orderItems_XML	= orderItems_XML + orderItemAllRoutes_xml.replace( '[ORDERITEM]', oItem )	
+			}
+			
+			delete_XML	= delete_xml.replace('[ORDERITEMS]', orderItems_XML )	
+		} else {
+			def auxRouteSegmentLst	= []
+			auxRouteSegmentLst	= routeSegmentLst
+			assert auxRouteSegmentLst.size() > routesToChange.size(), "ERROR: Se están intentando cambiar todas las rutas. Si es así, introduzca el valor 'ALL' en la propiedad 'routesToChange' o especifica las rutas que se desean cambiar"
+			routesToChange.each {
+				auxRouteSegmentLst.remove(it.toInteger() - 1)
+			}
+			paxes.each { pax ->
+				def services_XML	= ''
+				def oItem_XML = rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.find { orderItem ->
+					orderItem.Service[0].PassengerRef.toString().equals(pax)
+				}
+				oItem	= oItem_XML.@OrderItemID.toString()
+				oItem_XML.Service.each { service ->
+					auxRouteSegmentLst.each { segments ->
+						if ( segments.toString().contains(service.SegmentRef.toString()) ) {
+							serviceID	= service.@ServiceID.toString()
+							services_XML	= services_XML + service_xml.replace('[SERVICE]', serviceID.toString() )
+						}
+					}
+				}
+				
+				def orderItemSomeRoutes_XML	= orderItemSomeRoutes_XML + orderItemSomeRoutes_xml	.replace('[ORDERITEM]', oItem )
+																					.replace('[SERVICES]', services_xml )
+			}
+			
+			delete_XML	= delete_XML.replace('[ORDERITEMS]', orderItemSomeRoutes_XML )
+		}
+		
+		return delete_XML
+	}
+
+		//Devuelve XML de dataLists
+	def getDataLists_XML( rs, paxToChange ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getDataLists_XML'
+
+		def paxes				= []
+		def ptc				= ''
+		def individualID		= ''
+		def individualIDToPay	= ''
+		def name				= ''
+		def surname			= ''
+		 
+		if ( paxToChange == 'ALL' ) {
+			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
+				paxes	<< it.@PassengerID.toString()	
+			}
+		} else {
+			paxes	= paxToChange.split(',')
+		}
+		
+		paxes.each { pax ->
+			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
+				if ( it.@PassengerID.toString().equals(pax) )  {
+					ptc		= it.PTC.toString()
+					individualID = "IND_"+pax
+					if (individualID.contains("ADULT")){
+						individualIDToPay = individualID
+					}			
+					name		= it.Individual.GivenName.toString()
+					surname	= it.Individual.Surname.toString() 
+					passenger_xml	= passenger_xml + sklt_passenger.replace('[PAX]'			, pax 		)
+														  .replace('[PTC]'			, ptc 		)
+														  .replace('[NAME]'			, name 		)
+														  .replace('[SURNAME]'		, surname		)
+														  .replace('[INDIVIDUALID]'	,individualID	)
+				}
+			}
+		}
 	}
 }
 
