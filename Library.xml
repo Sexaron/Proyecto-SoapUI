@@ -3065,25 +3065,46 @@ context.setProperty( objName, new LIB_OrderRetrieveXMLs ( testRunner, context, l
 	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderReshop XML" id="50a4dcb7-f7fa-43e0-bbce-4638fedca120" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getReshop_XML
+ *		- getRouteSegmentLst
  */
 
 import groovy.json.JsonSlurper
 
-class LIB_OrderReshopXMLs {
+class LIB_OrderReshopXML {
 
-	def	reshop_XML		= """<Reshop>
-					   			<OrderServicing>
-					   				<Delete>
-										[ORDERITEMS]
-									</Delete>
-					   			</OrderServicing>
-					 		</Reshop>"""
+	def	reshop_xml		=	"""	<Reshop>
+						   			<OrderServicing>
+						   				<Delete>
+											[ORDERITEMS]
+										</Delete>
+						   			</OrderServicing>
+						 		</Reshop>"""
 
-	def orderItem_XML		= """<OrderItem OrderItemID="[ORDERITEM]"/>"""
+	def orderItem_xml		=	"""	<OrderItem OrderItemID="[ORDERITEM]"/>"""
+
+	def originDestination_xml=	"""	<OriginDestination>
+									<Departure>
+										<AirportCode>[ORI]</AirportCode>
+										<Date>[DATE]</Date>
+									</Departure>
+									<Arrival>
+										<AirportCode>[DES]</AirportCode>
+									</Arrival>
+									[MARKETINGCARRIER]
+								</OriginDestination>"""
+								
+	def marketingCarrier_xml	=	"""	<MarketingCarrierAirline>
+									<AirlineID>[AIRLINEID]</AirlineID>
+									<FlightNumber>[FLIGHTNUM]</FlightNumber>
+								</MarketingCarrierAirline>"""
+
+
+
+								
 
 	def public testRunner, context, logger
 			            	
-	def LIB_OrderReshopXMLs ( whichTestRunner, whichContext, whichLogger ){
+	def LIB_OrderReshopXML ( whichTestRunner, whichContext, whichLogger ){
 		this.logger	= whichLogger
 		this.context	= whichContext
 		this.testRunner = whichTestRunner
@@ -3091,7 +3112,7 @@ class LIB_OrderReshopXMLs {
 
 		//Devuelve el XML del reshop
 	def getReshop_XML( orderView ) {
-		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XMLs/getReshop_XML'
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getReshop_XML'
 
 		def rs	= new XmlSlurper().parseText(orderView).declareNamespace('ns2':'http://www.iata.org/IATA/EDIST')
 
@@ -3104,18 +3125,163 @@ class LIB_OrderReshopXMLs {
 
 			if( '' != pax ){
 				orderItem	= it.@OrderItemID.toString()
-				orderItems_XML	= orderItems_XML + orderItem_XML.replace( '[ORDERITEM]', orderItem )
+				orderItems_XML	= orderItems_XML + orderItem_xml.replace( '[ORDERITEM]', orderItem )
 			}
 		}
 
-		reshop_XML	= reshop_XML.replace( '[ORDERITEMS]', orderItems_XML )
+		def reshop_XML	= reshop_xml.replace( '[ORDERITEMS]', orderItems_XML )
 		
 		return reshop_XML
+	}
+
+		//Devuelve segmentos de las rutas
+	def getRouteSegmentLst( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getRouteSegmentLst'
+		
+		def routeSegmentLst	= []
+		
+		rs.Body.OrderViewRS.Response.DataLists.FlightList.Flight.each {
+			routeSegmentLst	<< it.SegmentReferences
+		}
+		
+		return routeSegmentLst
+	}
+
+		//Devuelve las ciudades de Origen y Destino y, la fecha del vuelo
+	def getOriDesAndDate( rs, segments ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOriginDestination/getOriDesAndDate'											
+							   
+		def auxSegments	= []
+		def oriDesAndDate	= []
+		def ori			= ''
+		def des			= ''
+		def date			= ''
+		
+		auxSegments	= segments.toString().split(' ')
+		def flightSegment	= rs.Body.OrderViewRS.Response.DataLists.FlightSegmentList.FlightSegment.find {
+			it.@SegmentKey.toString() == auxSegments[0].toString()
+		}
+		ori			= flightSegment.Departure.AirportCode
+		date			= flightSegment.Departure.Date
+		auxSegments.each { segment ->
+			flightSegment	= rs.Body.OrderViewRS.Response.DataLists.FlightSegmentList.FlightSegment.find {
+				it.@SegmentKey.toString() == segment.toString()
+			}
+											  
+			des		= flightSegment.Arrival.AirportCode
+		}
+		oriDesAndDate << ori
+		oriDesAndDate << des
+		oriDesAndDate << date
+		
+		return oriDesAndDate
+	} 
+
+		//Devuelve el XML con el origen destino y fecha que irá en el XML de Add
+	def getOriDesXML( oriDesAndDate, i, dateLst, flightNumLst, marketingCarriers ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOriginDestination/getOriDesXML'
+		
+		def newDate	= new Date()
+		def random	= new Random()		
+		def origDate	= new Date().parse("yyyy-MM-dd", oriDesAndDate[2].toString())
+		def marketingCarrier_XML		= ''
+		def originDestination_XML	= ''
+		marketingCarriers	= marketingCarriers.split(',')
+													
+		if (  dateLst[0] == 'NO' || dateLst[0] == '' ) {
+			newDate	= origDate + 1 + random.nextInt(5)
+			newDate	= newDate.format("yyyy-MM-dd")
+		} else if ( dateLst[i] == 'RANDOM' ) {
+			newDate	= origDate + 1 + random.nextInt(5)
+			newDate	= newDate.format("yyyy-MM-dd")
+		} else {
+			StringBuilder date = new StringBuilder(dateLst[i])
+			date.insert(4,'-')
+			date.insert(7,'-')
+			auxDate	= new Date().parse( "yyyy-MM-dd", date.toString() )
+			newDate	= auxDate.format("yyyy-MM-dd")
+		}
+		
+		if ( flightNumLst[0] == 'NO' ) {
+			marketingCarrier_XML	= ''
+		} else if ( flightNumLst[i] == 'RANDOM' ) {
+			assert marketingCarrier != 'NO', "ERROR: si la propertie 'newFlightNumbers' tiene valores, la propertie 'marketingCarriers' también debe tenerlos"
+			marketingCarrier_XML	= marketingCarrier_xml	.replace( '[AIRLINEID]', marketingCarriers	)
+													.replace( '[FLIGHTNUM]', 'OPEN' 			)
+		} else {
+			assert marketingCarrier != 'NO', "ERROR: si la propertie 'newFlightNumbers' tiene valores, la propertie 'marketingCarriers' también debe tenerlos"
+			assert marketingCarri.size() == flightNumLst.size(), "ERROR: las properties 'marketingCarriers' y 'newFlightNumbers' deben tener el mismo número de valores"
+			marketingCarrier_XML	= marketingCarrier_xml	.replace( '[AIRLINEID]', marketingCarriers[i].toString() )
+													.replace( '[FLIGHTNUM]', flightNumLst[i].toString() )
+		}
+		
+		originDestination_XML	= originDestination_XML + originDestination_xml	.replace( '[ORI]'			, oriDesAndDate[0].toString()	)
+																	.replace( '[DES]'			, oriDesAndDate[1].toString()	)
+																   	.replace( '[DATE]'			, newDate.toString()		)
+																   	.replace( '[MARKETINGCARRIER]', marketingCarrier_XML		)
+
+		return originDestination_XML
+	}
+
+		//Devuelve XML con los orígenes y destinos de cada una de las rutas de todo el trayecto
+	def getOriginDestination_XML( rs, routeSegmentLst, routesToChange, dateLst, flightNumLst, marketingCarriers ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOriginDestination_XML'
+
+		def numRoutes				= routeSegmentLst.size()
+		def originDestination_XML	= ''
+		def oriDesAndDate			= []
+
+		if ( routesToChange == 'ALL' ) {
+		
+			///#####  ASSERTS  #####
+				if ( dateLst.toString() != "[NO]" ) {
+					assert numRoutes == dateLst.size(), "ERROR: El número de valores en la propertie 'newDates' no se corresponde con el número de rutas de la orden"
+				}
+				
+				if ( flightNumLst.toString() != "[NO]" ) {
+					assert numRoutes == flightNumLst.size(), "ERROR: El número de valores en la propertie 'newFlightNumbers' no se corresponde con el número de rutas de la orden"
+				}
+			//#####################
+		
+			logger.info "numRoutes = $numRoutes"
+			(1..numRoutes).each { i ->
+				oriDesAndDate			= getOriDesAndDate( rs, routeSegmentLst[i-1] )
+				originDestination_XML	= originDestination_XML + getOriDesXML( oriDesAndDate, i-1, dateLst, flightNumLst, marketingCarriers )
+			}
+		} else {
+			routesToChange	= routesToChange.split(',')
+		
+			//#####  ASSERTS  #####*/
+				routesToChange.each {
+					assert it.toString().toInteger() > 0 && it.toString().toInteger() < 15, "ERROR: Value not valid for the field 'routeToChange'. Check it."	
+				}
+		
+				if ( dateLst.toString() != "[NO]" ) {
+					assert routesToChange.size() == dateLst.toString().split(',').size(), "ERROR: The number of values in the 'newDates' property does not correspond to the number of values in the 'routesToChange' property. Check it."
+				}
+				
+				if ( flightNumLst.toString() != "[NO]" ) {
+					assert routesToChange.size() == flightNumLst.toString().split(',').size(), "ERROR: The number of values in the 'newFlightNumbers' property does not correspond to the number of values in the 'routesToChange' property. Check it."
+				}
+			//#####################
+		
+			
+			routesToChange.eachWithIndex { route, i ->
+				log.info numRoutes
+				assert route.toInteger() <= numRoutes, "ERROR: Value in the 'routesToChange' property is not correct. Check it."
+				auxRoute	= route.toInteger()
+				oriDesAndDate	= getOriDesAndDate( routeSegmentLst[auxRoute-1] )
+				getOriDesXML( oriDesAndDate, i )
+			}
+		}
+
+		logger.info originDestination_XML
+		return 'LLEGA'
 	}
 }
 
 final objName	= "cntx_ORXML"
-context.setProperty( objName, new LIB_OrderReshopXMLs ( testRunner, context, log) )
+context.setProperty( objName, new LIB_OrderReshopXML ( testRunner, context, log) )
 	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getDataListsFromOrderView_XML
