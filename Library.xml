@@ -278,11 +278,8 @@ class Lib_SettingUpData {
 final objName	= "cntx_SUD"
 context.setProperty( objName, new Lib_SettingUpData( testRunner, context, log) )</script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting offer" id="40a7112f-240b-46cd-bcaf-933a14bf4311" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  * Métodos:
- * 		- getValidOffers_Carriers //Utilizado en los filtros filter_marketingCarrier y filter_operatingCarrier
  * 		- filter_numScales
  * 		- filter_priceClass
- * 		- filter_marketingCarrier
- * 		- filter_operatingCarrier
  * 		- filter_flightNum
  * 		- filter_airlinesMarketingCarrier
  * 		- filter_airlinesOperatingCarrier
@@ -303,32 +300,6 @@ class Lib_GettingData {
 		this.logger	 = whichLogger
 		this.context	 = whichContext
 		this.testRunner = whichTestRunner
-	}
-
-		//Método que se usa en los filtros de MarketingCarrier y OperatingCarrier
-	def getValidOffers_Carriers(allOffers, flightSegmentsValid) {
-		logger.info ':: RUNNING -> ../../getValidOffers_Carriers'
-
-		def isValid		= true
-		def segmentsRefs	= ''
-		def validOffers	= []
-		
-		allOffers.each() { offer ->
-				isValid = true
-				offer.OfferItem[0].FareDetail.FareComponent.each() { fareComponent ->
-					segmentsRefs	= fareComponent.SegmentRefs.toString().split(' ')
-					segmentsRefs.each() {
-						if ( !flightSegmentsValid.toString().contains(it) ) {
-							isValid = false
-						}
-					}
-				}
-				if ( isValid ) { 
-					validOffers << offer 
-				}
-			}
-			
-		return validOffers
 	}
 	
 
@@ -392,54 +363,6 @@ class Lib_GettingData {
 		return validOffers
 	}
 
-		//Devuelve las ofertas según la propiedad 'marketingCarrier'
-	def filter_marketingCarrier( allOffers, mC, rs ){
-		logger.info ':: RUNNING -> ../filter_marketingCarrier'
-	
-		def validOffers		= []
-		def flightSegmentsValid = []
-		
-		if ( 'NO' == mC || 'RANDOM' == mC || '' == mC ) {
-			validOffers	= allOffers
-		} else {
-			rs.DataLists.FlightSegmentList.FlightSegment.each() {
-				if ( mC.contains(it.MarketingCarrier.AirlineID.toString()) ) {
-					flightSegmentsValid << it.@SegmentKey.toString()
-				}
-			}
-
-			validOffers	= getValidOffers_Carriers(allOffers, flightSegmentsValid)
-		}
-
-		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con marketingCarrier -> $mC"
-		return validOffers
-	}
-
-		//Devuelve las ofertas según la propiedad 'operatingCarrier'
-	def filter_operatingCarrier( allOffers, oC, rs ){
-		logger.info ':: RUNNING -> ../filter_operatingCarrier'
-		
-		def validOffers		= []
-		def segmentsRefs		= ''
-		def isValid			= true
-		def flightSegmentsValid = []
-		
-		if ( 'NO' == oC || 'RANDOM' == oC || '' == oC ) {
-			validOffers	= allOffers
-		} else {
-			rs.DataLists.FlightSegmentList.FlightSegment.each() {
-				if ( oC.contains(it.OperatingCarrier.AirlineID.toString()) ) {
-					flightSegmentsValid << it.@SegmentKey.toString()
-				}
-			}
-
-			validOffers	= getValidOffers_Carriers(allOffers, flightSegmentsValid)
-		}
-		
-		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con operatingCarrier -> $oC"
-		return validOffers
-	}
-
 		//Devuelve las ofertas según la propiedad 'flightNum'
 			//Se tiene en cuenta las escalas. 
 			//Solo comprueba que los números de vuelo dados estén dentro del trayecto pudiendo haber más números
@@ -457,10 +380,14 @@ class Lib_GettingData {
 		} else {
 			fN	= fN.split(',')
 			fN.each() { num ->
-				flightSegments << rs.DataLists.FlightSegmentList.FlightSegment.find() {
-					it.MarketingCarrier.FlightNumber.toString().equals(num)
-				}.@SegmentKey.toString()
-				assert flightSegments != null, "ERROR: no hay segmento con número de vuelo $num"	
+				isValid	= false
+				rs.DataLists.FlightSegmentList.FlightSegment.each() {
+					if ( it.MarketingCarrier.FlightNumber.toString().equals(num) ) {
+						flightSegments << it.@SegmentKey.toString()
+						isValid	= true
+					}
+				} 
+				assert isValid == true, "ERROR: no hay segmento con número de vuelo $num"
 			}
 
 			allOffers.each() { offer ->
@@ -644,8 +571,7 @@ class Lib_GettingData {
 	}
 	
 		//Devuelve una oferta de todas las disponibles según los criterios
-	def getOffer( 	numScales, priceClass, marketingCarrier,
-				operatingCarrier, flightNum, airlinesMarketingCarrier, 
+	def getOffer( 	numScales, priceClass, flightNum, airlinesMarketingCarrier, 
 				airlinesOperatingCarrier, beforeTime, afterTime, rs, citiesLst ) {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data/getOffer'
 		
@@ -657,8 +583,6 @@ class Lib_GettingData {
 		allOffers 	= rs.OffersGroup.AirlineOffers.Offer
 		validOffers	= filter_numScales( allOffers, numScales, rs, numSegments )
 		validOffers	= filter_priceClass( validOffers, priceClass, rs )
-		validOffers	= filter_marketingCarrier( validOffers, marketingCarrier, rs )
-		validOffers	= filter_operatingCarrier( validOffers, operatingCarrier, rs )
 		validOffers	= filter_flightNum( validOffers, flightNum, rs )
 		validOffers	= filter_airlinesMarketingCarrier( validOffers, airlinesMarketingCarrier, rs )
 		validOffers	= filter_airlinesOperatingCarrier( validOffers, airlinesOperatingCarrier, rs )
@@ -681,7 +605,349 @@ class Lib_GettingData {
 }
 
 final objName	= "cntx_GO"
-context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting offer from Reshop" id="11d26331-91c6-48cd-9923-37d9c29b149a" disabled="true"><con:settings/><con:config><script><![CDATA[/*
+ * Métodos:
+ * 		- filter_numScales
+ * 		- filter_priceClass
+ * 		- filter_flightNum
+ * 		- filter_airlinesMarketingCarrier
+ * 		- filter_airlinesOperatingCarrier
+ * 		- filter_beforeTime
+ * 		- filter_afterTime
+ * 		- getRandomOffer
+ * 		- getOffer 
+ * 		- getResponse
+ */
+ 
+import groovy.json.JsonSlurper
+
+class Lib_GettingOfferFromOrderReshop {
+
+	def public testRunner, context, logger
+
+	def Lib_GettingOfferFromOrderReshop ( whichTestRunner, whichContext, whichLogger ){
+		this.logger	 = whichLogger
+		this.context	 = whichContext
+		this.testRunner = whichTestRunner
+	}
+	
+
+		//Devuelve las ofertas según la propiedad 'force_numScales'
+	def filter_numScales( allOffers, nS, numSegments ){
+		logger.info ':: RUNNING -> ../filter_numScales'
+		
+		def validOffers	= []
+		def segmentsRefs	= ''
+		def isValid		= true
+		nS	= nS.split(',')
+		
+		if ( ('NO' == nS[0] || 'RANDOM' == nS[0] || '' == nS[0]) && 2 > nS.size() ) {
+			validOffers	= allOffers
+		} else {
+			assert nS.size() == numSegments, " ERROR: en la propiedad force_numScales se deben dar tantos valores como segmentos haya" 
+
+			allOffers.each() { offer ->
+				isValid	= true		
+				offer.AddOfferItem[0].FareDetail.FareComponent.eachWithIndex() { fareComponent, index ->
+					segmentsRefs	= fareComponent.SegmentRefs.toString().split(' ')
+					if ( segmentsRefs.size() != nS[index].toInteger() ) {
+						isValid	= false 
+					}
+				}
+				if ( isValid ) { 
+					validOffers << offer 
+				}
+			}
+		}
+		assert validOffers.size() > 0, " WARNING: no hay ofertas con esa configuración de escalas"
+		return validOffers
+	}
+
+		//Devuelve las ofertas según la propiedad 'priceClass'
+	def filter_priceClass( allOffers, pC ){
+		logger.info ':: RUNNING -> ../filter_priceClass'		
+
+		def validOffers	= []
+		def segmentsRefs	= ''
+		def priceClass		= ''
+		def isValid		= true
+		
+		if ( 'NO' == pC || 'RANDOM' == pC || '' == pC ) {
+			validOffers	= allOffers
+		} else {
+			isValid	= true
+			allOffers.each() { offer ->	
+				isValid	= true		
+				offer.FlightsOverview.FlightRef.each(){
+					if ( !pC.contains(it.@PriceClassRef.toString()) ) {
+						isValid = false
+					}
+				}
+				if ( isValid ) { 
+					validOffers << offer 
+				}
+			}
+		}
+		assert validOffers.size() > 0, " ERROR: no hay ofertas de $pC"
+		return validOffers
+	}
+
+		//Devuelve las ofertas según la propiedad 'flightNum'
+			//Se tiene en cuenta las escalas. 
+			//Solo comprueba que los números de vuelo dados estén dentro del trayecto pudiendo haber más números
+	def filter_flightNum( allOffers, fN, rs ){
+		logger.info ':: RUNNING -> ../filter_flightNum'
+		
+		def validOffers		= []
+		def segmentsRefs		= ''
+		def isValid			= true
+		def flightSegments		= []
+		def segmentsRef		= []
+		
+		if ( 'NO' == fN || 'RANDOM' == fN || '' == fN ) {
+			validOffers	= allOffers
+		} else {
+			fN	= fN.split(',')
+			fN.each() { num ->
+				isValid	= false
+				rs.DataLists.FlightSegmentList.FlightSegment.each() {
+					if ( it.MarketingCarrier.FlightNumber.toString().equals(num) ) {
+						flightSegments << it.@SegmentKey.toString()
+						isValid	= true
+					}
+				} 
+				assert isValid == true, "ERROR: no hay segmento con número de vuelo $num"
+			}
+
+			allOffers.each() { offer ->
+				segmentsRef	= []
+				isValid		= true
+				offer.AddOfferItem[0].FareDetail.FareComponent.each() {
+					segmentsRef << it.SegmentRefs
+				}				
+				
+				flightSegments.each(){ flight ->
+					if ( !segmentsRef.toString().contains(flight.toString()) ) {
+						isValid = false
+					}
+				}
+				
+				if ( isValid ) { 
+					validOffers << offer 
+				}
+			}
+		}
+		
+		assert validOffers.size() > 0, " WARNING: no hay ofertas para todos los segmentos con números de vuelo -> $fN"
+		return validOffers
+	}
+
+		//Devuelve las ofertas según la propiedad 'airlinesMarketingCarrier'
+			//Todos los segmentos serán de una de las propiedades indicadas
+	def filter_airlinesMarketingCarrier( allOffers, aMC, rs ){
+		logger.info ':: RUNNING -> ../filter_airlinesMarketingCarrier'
+		
+		def validOffers		= []
+		def isValid			= true
+		def flightSegment		= []
+		def segmentsRefLst		= []
+		
+		if ( 'NO' == aMC || 'RANDOM' == aMC || '' == aMC ) {
+			validOffers	= allOffers
+		} else {
+
+			allOffers.each() { offer ->
+				segmentsRefLst	= []
+				isValid		= true
+				offer.AddOfferItem[0].FareDetail.FareComponent.each() {
+					segmentsRefLst << it.SegmentRefs
+					segmentsRefLst	= segmentsRefLst.toString().replace('[', '').replace(']', '')
+					segmentsRefLst.split(' ').each() { segment ->
+						rs.DataLists.FlightSegmentList.FlightSegment.each() { flightSeg ->
+							if ( flightSeg.@SegmentKey.toString().equals(segment.toString()) ) {
+								if ( !aMC.toString().contains(flightSeg.MarketingCarrier.AirlineID.toString() ) ) {
+									isValid = false
+								}
+							}
+						}
+					}
+				}
+				if ( isValid ) { 
+					validOffers << offer
+				}
+			}
+		}
+		
+		assert validOffers.size() > 0, " WARNING: no hay ofertas en la que todos los segmentos sea una de las siguientes aerolíneas con marketing carrier -> $aMC"
+		return validOffers
+	}
+
+		//Devuelve las ofertas según la propiedad 'airlinesOperatingCarrier'
+			//Todos los segmentos serán de una de las propiedades indicadas
+	def filter_airlinesOperatingCarrier( allOffers, aOC, rs ){
+		logger.info ':: RUNNING -> ../filter_airlinesOperatingCarrier'
+		
+		def validOffers		= []
+		def isValid			= true
+		def flightSegment		= []
+		def segmentsRefLst		= []
+		
+		if ( 'NO' == aOC || 'RANDOM' == aOC || '' == aOC) {
+			validOffers	= allOffers
+		} else {
+
+			allOffers.each() { offer ->
+				segmentsRefLst	= []
+				isValid		= true
+				offer.AddOfferItem[0].FareDetail.FareComponent.each() {
+					segmentsRefLst << it.SegmentRefs
+					segmentsRefLst	= segmentsRefLst.toString().replace('[', '').replace(']', '')
+					segmentsRefLst.split(' ').each() { segment ->
+						rs.DataLists.FlightSegmentList.FlightSegment.each() { flightSeg ->
+							if ( flightSeg.@SegmentKey.toString().equals(segment.toString()) ) {
+								if ( !aOC.toString().contains(flightSeg.OperatingCarrier.AirlineID.toString() ) ) {
+									isValid = false
+								}
+							}
+						}
+					}
+				}
+				if ( isValid ) { 
+					validOffers << offer
+				}
+			}
+		}
+		
+		assert validOffers.size() > 0, " WARNING: no hay ofertas en la que todos los segmentos sea una de las siguientes aerolíneas con operating carrier -> $aOC"
+		return validOffers
+	}
+
+	        	//Devuelve ofertas en las que el primer segmento salga antes de la hora indicada
+     def filter_beforeTime( allOffers, time, rs ) {
+		logger.info ':: RUNNING -> ../filter_berofeTime'
+		  
+          def validOffers   = []
+		def isValid		= true
+		def refs		= []
+		def ref			= ''
+		def flightSegment	= []
+            
+       	if ( 'NO' == time || 'RANDOM' == time || '' == time) {
+			validOffers	= allOffers
+		} else {
+
+			if ( time.size() < 5 ) {
+				time = '0' + time
+			}			
+            
+	       	allOffers.each {
+		      	isValid = true
+	      		refs    = it.AddOfferItem[0].FareDetail.FareComponent[0].SegmentRefs.toString().split(' ')
+		      	ref = refs[0]
+		      	flightSegment   = rs.DataLists.FlightSegmentList.FlightSegment.find {
+	               	it.@SegmentKey.toString().equals(ref)
+	           	}
+	           
+	           if ( flightSegment.Departure.Time.toString() > time ) {  isValid = false }
+	           if ( isValid ) {    validOffers << it }
+  			}	
+		}	
+		
+       	assert validOffers.size() > 0, "ERROR: no hay ofertas con salida antes de la hora solicitada. Hora solicitada: $time H"
+       	return validOffers
+   	}
+
+			//Devuelve ofertas en las que el primer segmento salga después de la hora indicada
+     def filter_afterTime( allOffers, time, rs ) {
+		  logger.info ':: RUNNING -> ../filter_afterTime'
+		  
+       	def validOffers     = []
+	  	def isValid		= true
+	  	def refs		= []
+	  	def ref			= ''
+	  	def flightSegment	= []
+
+       	if ( 'NO' == time || 'RANDOM' == time || '' == time) {
+			validOffers	= allOffers
+		} else {
+			
+			if ( time.size() < 5 ) {
+				time = '0' + time
+			}
+			
+       		allOffers.each {
+           		isValid = true
+           		refs    = it.AddOfferItem[0].FareDetail.FareComponent[0].SegmentRefs.toString().split(' ')
+           		ref = refs[0]
+          		flightSegment   = rs.DataLists.FlightSegmentList.FlightSegment.find {
+                    	it.@SegmentKey.toString().equals(ref)
+                	}
+                if ( flightSegment.Departure.Time.toString() < time ) {  isValid = false }
+                if ( isValid ) { validOffers << it }
+       		}
+		}
+       		
+            assert validOffers.size() > 0, "ERROR: no hay ofertas con salida después de la hora solicitada. Hora solicitada: $time H"
+            return validOffers
+   	}
+   	
+		//Devuelve una oferta de todas las ofertas válidas pasadas por parámetro
+	def getRandomOffer( validOffers ) {
+		logger.info ':: RUNNING -> ../getRandomOffer'
+		def random  = new Random()
+		def numRandom   = random.nextInt( validOffers.size())
+		return validOffers[numRandom]
+	}
+	
+		//Devuelve una oferta de todas las disponibles según los criterios
+	def getOffer( 	numScales, priceClass, flightNum, airlinesMarketingCarrier, 
+				airlinesOperatingCarrier, beforeTime, afterTime, rs, citiesLst ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting offer from Reshop/getOffer'
+		
+		def offer			= ''
+		def allOffers		= []
+		def validOffers	= []
+		def numSegments	= citiesLst.split(',').size() / 2
+		
+		allOffers 	= rs.ReshopOffers.ReshopOffer
+		validOffers	= filter_numScales( allOffers, numScales, numSegments )
+		validOffers	= filter_priceClass( validOffers, priceClass )
+		validOffers	= filter_flightNum( validOffers, flightNum, rs )
+		validOffers	= filter_airlinesMarketingCarrier( validOffers, airlinesMarketingCarrier, rs )
+		validOffers	= filter_airlinesOperatingCarrier( validOffers, airlinesOperatingCarrier, rs )
+		validOffers	= filter_beforeTime( validOffers, beforeTime, rs )
+		validOffers	= filter_afterTime( validOffers, afterTime, rs )
+
+		offer		= getRandomOffer ( validOffers )
+		
+		return offer
+	}
+
+		//Devuelve el response
+	def getResponse( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting offer from Reshop/getResponse'
+		
+		def response	= rs.ReShoppingResponseID.ResponseID
+		
+		return response
+	}
+
+		//Devuelve la lista de Orígenes y Destinos solicitados
+	def getCitiesLst( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting offer from Reshop/getCitiesLst'
+		
+		def citiesLst	=	[]
+		rs.DataLists.OriginDestinationList.OriginDestination.each() {
+			citiesLst << it.DepartureCode
+			citiesLst << it.ArrivalCode
+		}
+
+		return citiesLst
+	}
+}
+
+final objName	= "cntx_GOFR"
+context.setProperty( objName, new Lib_GettingOfferFromOrderReshop( testRunner, context, log) )]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_Getting data from offer" id="aef59c8f-7ee4-4554-a0c0-b3bdbdbcd22f" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	Métodos:
  *		- getDataFromOfferID
  * 		- getSegmentLstV2 
@@ -3066,6 +3332,14 @@ context.setProperty( objName, new LIB_OrderRetrieveXMLs ( testRunner, context, l
  *	XML:
  *		- getReshop_XML
  *		- getRouteSegmentLst
+ *		- getOriDesAndDate
+ *		- getOriDesXML
+ *		- getOriginDestination_XML
+ *		- getPassengers_XML
+ *		- getPreferences_XML
+ *		- getAdd_XML
+ *		- getDelete_XML
+ *		- getDataLists_XML
  */
 
 import groovy.json.JsonSlurper
