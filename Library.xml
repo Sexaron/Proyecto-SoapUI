@@ -3142,6 +3142,20 @@ class LIB_OrderReshopXML {
 
 	def service_xml		=	"""	<ServiceRetainRequestIDs>[SERVICE]</ServiceRetainRequestIDs>"""
 
+	def dataLists_xml		= 	"""	<DataLists>
+									<PassengerList>
+										[PASSENGER]
+									</PassengerList>							
+								</DataLists>"""
+
+	def passenger_xml		=	"""	<Passenger PassengerID="[PAX]">
+									<PTC>[PTC]</PTC>
+									<Individual IndividualID="[INDIVIDUALID]">
+										<GivenName>[NAME]</GivenName>
+										<Surname>[SURNAME]</Surname>
+									</Individual>
+								</Passenger>"""							
+
 								
 
 	def public testRunner, context, logger
@@ -3190,28 +3204,23 @@ class LIB_OrderReshopXML {
 	}
 
 		//Devuelve las ciudades de Origen y Destino y, la fecha del vuelo
-	def getOriDesAndDate( rs, segments ) {
+	def getOriDesAndDate( rs, segment ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOriginDestination/getOriDesAndDate'											
-							   
-		def auxSegments	= []
+
+		def auxSegment		= []
 		def oriDesAndDate	= []
 		def ori			= ''
 		def des			= ''
 		def date			= ''
 		
-		auxSegments	= segments.toString().split(' ')
+		auxSegment	= segment
 		def flightSegment	= rs.Body.OrderViewRS.Response.DataLists.FlightSegmentList.FlightSegment.find {
-			it.@SegmentKey.toString() == auxSegments[0].toString()
+			it.@SegmentKey.toString() == auxSegment.toString()
 		}
 		ori			= flightSegment.Departure.AirportCode
 		date			= flightSegment.Departure.Date
-		auxSegments.each { segment ->
-			flightSegment	= rs.Body.OrderViewRS.Response.DataLists.FlightSegmentList.FlightSegment.find {
-				it.@SegmentKey.toString() == segment.toString()
-			}
-											  
-			des		= flightSegment.Arrival.AirportCode
-		}
+		des			= flightSegment.Arrival.AirportCode
+		
 		oriDesAndDate << ori
 		oriDesAndDate << des
 		oriDesAndDate << date
@@ -3220,7 +3229,7 @@ class LIB_OrderReshopXML {
 	} 
 
 		//Devuelve el XML con el origen destino y fecha que irá en el XML de Add
-	def getOriDesXML( oriDesAndDate, i, dateLst, flightNumLst, marketingCarriers ) {
+	def getOriDesXML( oriDesAndDate, i, dateLst, flightNumLst, marketingCarriers, dateScales ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOriginDestination/getOriDesXML'
 		
 		def newDate	= new Date()
@@ -3256,23 +3265,29 @@ class LIB_OrderReshopXML {
 			marketingCarrier_XML	= marketingCarrier_xml	.replace( '[AIRLINEID]', marketingCarriers[i].toString() )
 													.replace( '[FLIGHTNUM]', flightNumLst[i].toString() )
 		}
+
+		if ( '' != dateScales ) { newDate	= dateScales }
 		
 		originDestination_XML	= originDestination_XML + originDestination_xml	.replace( '[ORI]'			, oriDesAndDate[0].toString()	)
 																	.replace( '[DES]'			, oriDesAndDate[1].toString()	)
 																   	.replace( '[DATE]'			, newDate.toString()		)
 																   	.replace( '[MARKETINGCARRIER]', marketingCarrier_XML		)
-
-		return originDestination_XML
+																   	
+		return [ originDestination_XML, newDate.toString() ]
 	}
 
 		//Devuelve XML con los orígenes y destinos de cada una de las rutas de todo el trayecto
 	def getOriginDestination_XML( rs, routeSegmentLst, routesToChange, dateLst, flightNumLst, marketingCarriers ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOriginDestination_XML'
 
+		def segments				= []
+		def numSegments			= 0
 		def numRoutes				= routeSegmentLst.size()
 		def originDestination_XML	= ''
+		def auxOriginDestination_XML	= ''
 		def oriDesAndDate			= []
-
+		def dateScales				= ''
+		
 		if ( routesToChange == 'ALL' ) {
 		
 			///#####  ASSERTS  #####
@@ -3284,10 +3299,14 @@ class LIB_OrderReshopXML {
 					assert numRoutes == flightNumLst.size(), "ERROR: El número de valores en la propertie 'newFlightNumbers' no se corresponde con el número de rutas de la orden"
 				}
 			//#####################
-		
 			(1..numRoutes).each { i ->
-				oriDesAndDate			= getOriDesAndDate( rs, routeSegmentLst[i-1] )
-				originDestination_XML	= originDestination_XML + getOriDesXML( oriDesAndDate, i-1, dateLst, flightNumLst, marketingCarriers )
+				dateScales	= ''
+				segments	= routeSegmentLst[i-1].toString().split(' ')
+				segments.each() {
+					oriDesAndDate							= getOriDesAndDate( rs, it )
+					( auxOriginDestination_XML, dateScales )	= getOriDesXML( oriDesAndDate, i-1, dateLst, flightNumLst, marketingCarriers, dateScales )	
+					originDestination_XML 					= originDestination_XML + auxOriginDestination_XML
+				}
 			}
 		} else {
 			routesToChange	= routesToChange.split(',')
@@ -3309,9 +3328,12 @@ class LIB_OrderReshopXML {
 			
 			routesToChange.eachWithIndex { route, i ->
 				assert route.toInteger() <= numRoutes, "ERROR: El valor dado en la propertie 'routesToChange' no es válido"
-				auxRoute	= route.toInteger()
-				oriDesAndDate	= getOriDesAndDate( routeSegmentLst[auxRoute-1] )
-				getOriDesXML( oriDesAndDate, i )
+				segments	= routeSegmentLst[route.toInteger() - 1].toString().split(' ')
+				segments.each() {
+					oriDesAndDate							= getOriDesAndDate( rs, it )
+					( auxOriginDestination_XML, dateScales ) 	= getOriDesXML( oriDesAndDate, i, dateLst, flightNumLst, marketingCarriers, dateScales )
+					originDestination_XML 					= originDestination_XML + auxOriginDestination_XML
+				}
 			}
 		}
 		
@@ -3386,12 +3408,13 @@ class LIB_OrderReshopXML {
 	def getDelete_XML( rs, paxToChange, routesToChange, routeSegmentLst ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getDelete_XML'
 
-		def delete_XML			= ''
-		def paxes				= []	
-		def serviceLstPerPax	= []
-		def oItem				= ''
-		def serviceID			= ''
-		def orderItems_XML		= ''
+		def delete_XML				= ''
+		def paxes					= []	
+		def serviceLstPerPax		= []
+		def oItem					= ''
+		def serviceID				= ''
+		def orderItems_XML			= ''
+		def orderItemSomeRoutes_XML	= ''
 		
 		if ( paxToChange == 'ALL' ) {
 			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
@@ -3424,11 +3447,13 @@ class LIB_OrderReshopXML {
 			delete_XML	= delete_xml.replace('[ORDERITEMS]', orderItems_XML )	
 		} else {
 			def auxRouteSegmentLst	= []
+			
 			auxRouteSegmentLst	= routeSegmentLst
 			assert auxRouteSegmentLst.size() > routesToChange.size(), "ERROR: Se están intentando cambiar todas las rutas. Si es así, introduzca el valor 'ALL' en la propiedad 'routesToChange' o especifica las rutas que se desean cambiar"
 			routesToChange.each {
 				auxRouteSegmentLst.remove(it.toInteger() - 1)
 			}
+			
 			paxes.each { pax ->
 				def services_XML	= ''
 				def oItem_XML = rs.Body.OrderViewRS.Response.Order.OrderItems.OrderItem.find { orderItem ->
@@ -3439,16 +3464,15 @@ class LIB_OrderReshopXML {
 					auxRouteSegmentLst.each { segments ->
 						if ( segments.toString().contains(service.SegmentRef.toString()) ) {
 							serviceID	= service.@ServiceID.toString()
-							services_XML	= services_XML + service_xml.replace('[SERVICE]', serviceID.toString() )
+							services_XML	= service_xml.replace('[SERVICE]', serviceID.toString() )
+							orderItemSomeRoutes_XML	= orderItemSomeRoutes_XML + orderItemSomeRoutes_xml	.replace('[ORDERITEM]'	, oItem 		)
+																							.replace('[SERVICES]'	, services_XML )
 						}
 					}
 				}
-				
-				def orderItemSomeRoutes_XML	= orderItemSomeRoutes_XML + orderItemSomeRoutes_xml	.replace('[ORDERITEM]', oItem )
-																					.replace('[SERVICES]', services_xml )
 			}
-			
-			delete_XML	= delete_XML.replace('[ORDERITEMS]', orderItemSomeRoutes_XML )
+					
+			delete_XML	= delete_xml.replace('[ORDERITEMS]', orderItemSomeRoutes_XML )
 		}
 		
 		return delete_XML
@@ -3464,6 +3488,8 @@ class LIB_OrderReshopXML {
 		def individualIDToPay	= ''
 		def name				= ''
 		def surname			= ''
+		def passenger_XML		= ''
+		def dataLists_XML		= ''
 		 
 		if ( paxToChange == 'ALL' ) {
 			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
@@ -3477,13 +3503,13 @@ class LIB_OrderReshopXML {
 			rs.Body.OrderViewRS.Response.DataLists.PassengerList.Passenger.each {
 				if ( it.@PassengerID.toString().equals(pax) )  {
 					ptc		= it.PTC.toString()
-					individualID = "IND_"+pax
+					individualID = "IND_" + pax
 					if (individualID.contains("ADULT")){
 						individualIDToPay = individualID
 					}			
 					name		= it.Individual.GivenName.toString()
 					surname	= it.Individual.Surname.toString() 
-					passenger_xml	= passenger_xml + sklt_passenger.replace('[PAX]'			, pax 		)
+					passenger_XML	= passenger_XML + passenger_xml.replace('[PAX]'			, pax 		)
 														  .replace('[PTC]'			, ptc 		)
 														  .replace('[NAME]'			, name 		)
 														  .replace('[SURNAME]'		, surname		)
@@ -3491,6 +3517,10 @@ class LIB_OrderReshopXML {
 				}
 			}
 		}
+
+		dataLists_XML	= dataLists_xml.replace('[PASSENGER]', passenger_XML)
+
+		return dataLists_XML
 	}
 }
 
