@@ -953,6 +953,9 @@ context.setProperty( objName, new Lib_GettingOfferFromOrderReshop( testRunner, c
  * 		- getSegmentLstV2 
  *		- getOfferItemsFromOfferPrice
  *		- getOfferID
+ *		- getOrderID
+ *		- getOfferIDFromReprice
+ *		- getOrderIDFromReprice
  *		- getPNR
  *		- getTickets
  *		- getEMDS
@@ -963,6 +966,11 @@ context.setProperty( objName, new Lib_GettingOfferFromOrderReshop( testRunner, c
  *		- getLstPaxesFromOrderView
  *		- getLstOfferItemIDAcceptFromOrderReshop
  *		- getResponseIDFromOrderReshop
+ *		- getPassengerReferences
+ *		- getOfferItemsFromOrderReshop
+ *		- getLstPaxesFromReprice
+ *		- getLstOrderItemsToDelete
+ *		- getNewPriceOfferFromReprice
  */
  
 import groovy.json.JsonSlurper
@@ -1134,7 +1142,36 @@ class Lib_GettingDataFromOfferID {
 		if ( '' == offerID ) {
 			offerID	= rs.Response.Order.@OrderID.toString()
 		}
+		
 		return offerID
+	}
+
+		//Se obtiene el orderID de la oferta
+	def getOrderID ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOrderID'
+
+		def orderID = rs.Response.Order.@OrderID.toString()
+		
+		return orderID
+	}
+
+		//Se obtiene el offerID de la oferta a partir del Reprice
+	def getOfferIDFromReprice ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferIDFromReprice'
+
+		def offerID = rs.ReshopOffers.ReshopOffer.@OfferID.toString()
+
+		return offerID
+	}
+
+		//Se obtiene el orderID de la oferta a partir del Reprice
+	def getOrderIDFromReprice ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOrderIDFromReprice'
+
+		def orderID = rs.ReshopOffers.ReshopOffer.AddOfferItem[0].@OrderItemIDs.toString().split(' ')
+		orderID	= orderID[0].substring( 0, orderID[0].indexOf('_') )
+
+		return orderID
 	}
 
 		//Se obtiene el PNR de la oferta
@@ -1142,6 +1179,7 @@ class Lib_GettingDataFromOfferID {
 		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getPNR'
 
 		def PNR = rs.Response.Order.BookingReferences.BookingReference.ID
+		
 		return PNR.toString()
 	}
 
@@ -1286,6 +1324,101 @@ class Lib_GettingDataFromOfferID {
 		def offerID = rs.Body.OrderReshopRS.Response.ReshopOffers.ReshopOffer.@OfferID.toString()
 
 		return offerID
+	}
+
+		//Se obtiene el offerID del OrderReshop
+	def getPassengerReferences ( rs, offerID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getPassengerReferences'
+
+		def paxRefs	= []
+
+		def offer	= rs.ReshopOffers.ReshopOffer.find() {
+			offerID.equals( it.@OfferID.toString() )
+		}
+
+		offer.AddOfferItem.each() {
+			paxRefs	<< it.Service[0].PassengerRefs.toString()
+		}
+
+		paxRefs	= paxRefs.toString().replace( '['	, '' )
+								.replace( ']'	, '' )
+								.replace( ', '	, ' ')
+								
+		return paxRefs
+	}
+
+		//Se obtiene el offerID del OrderReshop
+	def getOfferItemsFromOrderReshop ( rs, offerID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItemsFromOrderReshop'
+		
+		def offerItemID_ADT	= ''
+		def offerItemID_CHD	= ''
+		def offerItemID_INF	= ''
+
+		def offer	= rs.ReshopOffers.ReshopOffer.find() {
+			offerID.contains( it.@OfferID.toString() )
+		}
+
+		offerItemID_ADT	= offer.AddOfferItem.find() {
+			it.Service.PassengerRefs.toString().contains( 'ADULT' )
+		}.@OfferItemID.toString()
+
+		offerItemID_CHD	= offer.AddOfferItem.find() {
+			it.Service.PassengerRefs.toString().contains( 'CHILD' )
+		}.@OfferItemID.toString()
+
+		offerItemID_INF	= offer.AddOfferItem.find() {
+			it.Service.PassengerRefs.toString().contains( 'INFANT' )
+		}.@OfferItemID.toString()
+		
+		return [ offerItemID_ADT, offerItemID_CHD, offerItemID_INF ]
+	}
+
+		//Se obtiene por separado las listas de los ADT, CHD e INF que se ven involucrados en el cambio
+	def getLstPaxesFromReprice ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getLstPaxesFromReprice'
+
+		def lstAdt	= ''
+		def lstChd	= ''
+		def lstInf	= ''
+
+		lstAdt	= rs.ReshopOffers.ReshopOffer.AddOfferItem.find() {
+			it.Service[0].toString().contains( 'ADULT' )
+		}.Service[0].PassengerRefs.toString()
+
+		lstChd	= rs.ReshopOffers.ReshopOffer.AddOfferItem.find() {
+			it.Service[0].toString().contains( 'CHILD' )
+		}.Service[0].PassengerRefs.toString()
+
+		lstInf	= rs.ReshopOffers.ReshopOffer.AddOfferItem.find() {
+			it.Service[0].toString().contains( 'INFANT' )
+		}.Service[0].PassengerRefs.toString()
+		
+		return [ lstAdt, lstChd, lstInf ]
+	}
+
+		//Se obtiene la lista de orderItems a eliminar de la reserva por el cambio a partir del Reprice
+	def getLstOrderItemsToDelete ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getLstOrderItemsToDelete'
+
+		def lstOrderItems	= ''
+
+		rs.ReshopOffers.ReshopOffer.AddOfferItem.each() {
+			lstOrderItems	= lstOrderItems + ' '
+			lstOrderItems	= lstOrderItems + it.@OrderItemIDs.toString()
+		}
+		lstOrderItems	= lstOrderItems.substring(1)
+		
+		return lstOrderItems
+	}
+
+		//Devuelve la nueva cantidad de la oferta a partir del XML del OrderReshop Reprice
+	def getNewPriceOfferFromReprice ( rs ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getNewPriceOfferFromReprice'
+
+		def newPriceOffer	= rs.ReshopOffers.ReshopOffer.TotalPrice.SimpleCurrencyPrice.toString()
+		
+		return newPriceOffer
 	}
 }
 
@@ -3340,13 +3473,14 @@ context.setProperty( objName, new LIB_OrderRetrieveXMLs ( testRunner, context, l
  *		- getAdd_XML
  *		- getDelete_XML
  *		- getDataLists_XML
+ *		- getAssociatedID_XML
  */
 
 import groovy.json.JsonSlurper
 
 class LIB_OrderReshopXML {
 
-	def	reshop_xml		=	"""	<Reshop>
+	def reshop_xml			=	"""	<Reshop>
 						   			<OrderServicing>
 						   				<Delete>
 											[ORDERITEMS]
@@ -3428,7 +3562,11 @@ class LIB_OrderReshopXML {
 										<GivenName>[NAME]</GivenName>
 										<Surname>[SURNAME]</Surname>
 									</Individual>
-								</Passenger>"""							
+								</Passenger>"""
+
+	def associatedID_xml	=	"""	<AssociatedID>
+				              			<OfferItemID Owner="IB">[OFFERITEM]</OfferItemID>
+				                    </AssociatedID>"""
 
 								
 
@@ -3796,6 +3934,22 @@ class LIB_OrderReshopXML {
 
 		return dataLists_XML
 	}
+
+		//Devuelve el AssociatedID con los offerItemsID de los pasajeros
+	def getAssociatedID_XML ( offADT, offCHD, offINF ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getAssociatedID_XML'
+
+		def associatedID_XML	= ''
+		def lst				= [ offADT, offCHD, offINF ]
+
+		lst.each() {
+			if ( it != '' ) {
+				associatedID_XML	= associatedID_XML + associatedID_xml.replace( '[OFFERITEM]', it )
+			}
+		}
+
+		return associatedID_XML
+	}
 }
 
 final objName	= "cntx_ORXML"
@@ -3803,6 +3957,7 @@ context.setProperty( objName, new LIB_OrderReshopXML ( testRunner, context, log)
 	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderChange XML" id="ee62c16c-baf2-4a12-ae3b-249e78051da9" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getDataListsFromOrderView_XML
+ *		- getDataListsFromReprice_XML
  *		- getOrderServicing_XML
  *		- getPassengerList_XML
  *		- getOriginalPassenger_XML
@@ -3810,7 +3965,11 @@ context.setProperty( objName, new LIB_OrderReshopXML ( testRunner, context, log)
  *		- getQueryAndDataLists_XML
  *		- round
  *		- getPaymentAncillaries_XML
+ *		- getPaymentChanges_XML
  *		- getQueryOCH_XML
+ *		- getQueryChanges_XML
+ *		- getAcceptOffer_XML
+ *		- getDeleteReprice_XML
  */
 
 import groovy.json.JsonSlurper
@@ -3825,7 +3984,7 @@ class LIB_OrderChangeXMLs {
 													<EmailAddressValue>[EMAILPAYER]</EmailAddressValue>
 												</EmailAddress>
 											</ContactProvided>
-										<IndividualRef>IND_ADULT_01</IndividualRef>
+										<IndividualRef>[INDIVIDUALREF]</IndividualRef>
 									</ContactInformation>
 								</ContactList>"""
 
@@ -3907,7 +4066,33 @@ class LIB_OrderChangeXMLs {
 									</OrderServicing>
 									[PAYMENTS]
 								</Query>"""
-				    													
+
+	def queryChanges_xml	=	"""	<Query>
+									<OrderID>[ORDERID]</OrderID>
+									<OrderServicing>
+										[ACCEPTOFFER]
+										[DELETE]
+									</OrderServicing>
+									[PAYMENTS]
+								</Query>"""
+
+	def acceptOfferChanges_xml	=	"""	<AcceptOffer>
+									<Offer OfferID="[OFFERID]" Owner="IB" ResponseID="[RESPONSEID]">
+										[OFFERITEMS]
+									</Offer>
+								</AcceptOffer>"""
+
+	def offerItem_xml		=	"""	<OfferItem OfferItemID="[OFFERITEM]">
+									<PassengerRefs>[PAXES]</PassengerRefs>
+								</OfferItem>"""
+
+	def deleteReprice_xml	= 	"""	<Delete>
+									[ORDERITEMS]
+								</Delete>"""
+
+	def orderItemReprice_xml	= 	"""<OrderItemID>[ORDERITEM]</OrderItemID>"""		
+
+			    													
 
 	def public testRunner, context, logger
 			            	
@@ -3917,7 +4102,7 @@ class LIB_OrderChangeXMLs {
 		this.testRunner	= whichTestRunner
 	}
 
-		//Devuelve el XML del reshop
+		//Devuelve el XML del dataList a partir del OrderView
 	def getDataListsFromOrderView_XML( OrderView, emailPayer ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getDataListsFromOrderView_XML'
 
@@ -3932,6 +4117,21 @@ class LIB_OrderChangeXMLs {
 		String xml = builder.bind{ mkp.yield dataLists_slurper }
 		
 		return xml
+	}
+
+
+		//Devuelve el XML del dataList para el OrderChanges A&D
+	def getDataListsFromReprice_XML( emailPayer, dataLists ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getDataListsFromReprice_XML'
+
+		def dataListsSlurper	= new XmlSlurper().parseText(dataLists)		
+		def individualRef		= dataListsSlurper.PassengerList.Passenger.find() {
+			it.@PassengerID.toString().contains( 'ADULT' )
+		}.Individual.@IndividualID.toString()
+		def dataLists_XML 	= dataLists	.replace( '</DataLists>'	, '<ContactList>' + payerContact_xml + '</DataLists>' )
+									.replace( '[EMAILPAYER]'		, emailPayer		)
+									.replace( '[INDIVIDUALREF]'	, individualRef	)
+		return dataLists_XML
 	}
 
 		//Devuelve el XML del OrderServicing
@@ -4132,6 +4332,40 @@ class LIB_OrderChangeXMLs {
 		return [ payments_XML, totalPriceToPay ]
 	}
 
+		//Devuelve el XML del Payment para el OrderChange de cambios
+	def getPaymentChanges_XML ( mashery, version, paymentMethod_order, currency, totalPriceOffer,
+					 		bagsAmount, seatsAmount, emailPayer, cardNum, cardType, TestSteps, 
+						 	maskedCreditCard, tokenizedCreditCard, serviceFee_XML,
+						 	specialNeedsAmount ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getPaymentChanges_XML'
+
+		def payments_XML		= ''
+		
+		if ( 'CASH' == paymentMethod_order ) {
+			payments_XML	= TestSteps.getPropertyValue("CASH_ORDERCREATE_v$version")
+		} else {
+			payments_XML	= TestSteps.getPropertyValue("${mashery}_MASHERY_CC_ORDERCREATE_v$version")
+		}
+
+		def total			= Double.parseDouble( totalPriceOffer ) + Double.parseDouble( bagsAmount ) + Double.parseDouble( seatsAmount ) + Double.parseDouble( specialNeedsAmount )
+		def totalPriceToPay	= round(total.toString()).toString()
+
+		if ( totalPriceOffer.contains('-') ) {
+			payments_XML	= ''
+		} else {
+			payments_XML	= payments_XML	.replace( '[CURRENCY]'			, currency 			)
+									.replace( '[AMOUNT]'			, totalPriceOffer 		)
+									.replace( '[CARDTYPE]'			, cardType	 		)
+									.replace( '[CARDNUM]'			, cardNum	 			)
+									.replace( '[EMAILPAYER]'			, emailPayer 			)
+									.replace( '[SERVICEFEE]'			, serviceFee_XML 		)
+									.replace( '[MASKEDCREDITCARD]'	, maskedCreditCard 		)
+									.replace( '[TOKENIZEDCREDITCARD]'	, tokenizedCreditCard 	)
+		}
+								
+		return [ payments_XML, totalPriceToPay ]
+	}
+
 		//Devuelve el XML de Query para ancillaries Postventa
 	def getQueryOCH_XML ( orderID, bagsOffer_XML, seatsOffer_XML, payments_XML ) {
 		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getQueryOCH_XML'
@@ -4144,6 +4378,67 @@ class LIB_OrderChangeXMLs {
 								.replace( '[PAYMENTS]'	, payments_XML 	)
 
 		return queryOCH_XML
+	}
+
+		//Devuelve el XML de Query para cambios de vuelo
+	def getQueryChanges_XML ( orderID, acceptOffer_XML, deleteReprice_XML, payments_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getQueryChanges_XML'
+
+		def queryChanges_XML = ''
+
+		queryChanges_XML	= queryChanges_xml	.replace( '[ORDERID]'	, orderID 		)
+										.replace( '[ACCEPTOFFER]', acceptOffer_XML 	)
+										.replace( '[DELETE]'	, deleteReprice_XML )
+										.replace( '[PAYMENTS]'	, payments_XML 	)
+
+		return queryChanges_XML
+	}
+
+		//Devuelve el AcceptOffer para la Query del Reprice
+	def getAcceptOffer_XML ( responseID, offerID, offADT, offCHD, offINF,
+						lstADT, lstCHD, lstINF ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getAcceptOffer_XML'
+
+		def acceptOffer_XML	= ''
+		def offerItems_XML	= ''
+
+		if ( offADT != '' ) {
+			offerItems_XML	= offerItems_XML + offerItem_xml	.replace( '[OFFERITEM]'	, offADT )
+													.replace( '[PAXES]'		, lstADT )
+		}
+
+		if ( offCHD != '' ) {
+			offerItems_XML	= offerItems_XML + offerItem_xml	.replace( '[OFFERITEM]'	, offCHD )
+													.replace( '[PAXES]'		, lstCHD )
+		}
+
+		if ( offINF != '' ) {
+			offerItems_XML	= offerItems_XML + offerItem_xml	.replace( '[OFFERITEM]'	, offINF )
+													.replace( '[PAXES]'		, lstINF )
+		}
+
+		acceptOffer_XML	= acceptOfferChanges_xml	.replace( '[OFFERID]'	, offerID 		)
+											.replace( '[RESPONSEID]'	, responseID 		)
+											.replace( '[OFFERITEMS]'	, offerItems_XML 	)
+		return acceptOffer_XML
+	}
+
+		//Devuelve el Delete para la Query del Reprice
+	def getDeleteReprice_XML ( offerItemsToDelete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getDeleteReprice_XML'
+
+		def orderItemsReprice_XML	= ''
+		def deleteReprice_XML		= ''
+
+		def lst	= offerItemsToDelete.split(' ')
+
+		lst.each() {
+			orderItemsReprice_XML	= orderItemsReprice_XML + orderItemReprice_xml.replace( '[ORDERITEM]', it	)
+		}
+
+		deleteReprice_XML	= deleteReprice_xml.replace( '[ORDERITEMS]', orderItemsReprice_XML )
+		
+		return deleteReprice_XML
 	}
 }
 
@@ -4246,6 +4541,8 @@ context.setProperty( objName, new LIB_OrderChangeXMLs ( testRunner, context, log
 									, "78298485"		: "IBdistribution"
 									, "7828224"		: "IBdistribution"
 									, "78282245"		: "IBdistribution"
+									, "9222953"		: "VaConAgregador"
+									, "92229535"		: "VaConAgregador"
 								} """
 	
 									//Mashery_Username con su correspondiente apiKey						
@@ -4268,6 +4565,8 @@ context.setProperty( objName, new LIB_OrderChangeXMLs ( testRunner, context, log
 									, "78282245"	: "I"
 									, "7823708"	: "I"
 									, "78237084"	: "I"
+									, "9222953"	: "I"
+									, "92229535"	: "I"
 								} """	
 	////////////////////////////////
 
@@ -5376,6 +5675,8 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 									, "78298485"		: "IBdistribution"
 									, "7828224"		: "IBdistribution"
 									, "78282245"		: "IBdistribution"
+									, "9222953"		: "VaConAgregador"
+									, "92229535"		: "VaConAgregador"
 								} </con:value></con:property><con:property><con:name>lst_apiKey_UATD</con:name><con:value> { 	  
 									  "IBdistribution"	: "32z6e3vq867x3bjgk2vr4d4k"
 									, "ibreptestagg"	: "a49ca5ghtdasvbjwjb9r4bh5"
@@ -5390,6 +5691,8 @@ return "ok"</script></con:config></con:testStep><con:properties><con:property><c
 									, "78282245"	: "I"
 									, "7823708"	: "I"
 									, "78237084"	: "I"
+									, "9222953"	: "I"
+									, "92229535"	: "I"
 								} </con:value></con:property><con:property><con:name>**                     LST_Pax Data</con:name><con:value>**</con:value></con:property><con:property><con:name>lst_adults</con:name><con:value>[{	  "Birthdate"		: "1978-10-23"
 							, "Gender"		: "Male"
 							, "NameTitle"		: "MR"
