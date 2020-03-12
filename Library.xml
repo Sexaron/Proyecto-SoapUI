@@ -1354,11 +1354,12 @@ class Lib_GettingDataFromOfferID {
 		def offerItemID_ADT	= ''
 		def offerItemID_CHD	= ''
 		def offerItemID_INF	= ''
-
+		logger.info offerID
 		def offer	= rs.ReshopOffers.ReshopOffer.find() {
 			offerID.contains( it.@OfferID.toString() )
 		}
 
+		logger.info offer
 		offerItemID_ADT	= offer.AddOfferItem.find() {
 			it.Service.PassengerRefs.toString().contains( 'ADULT' )
 		}.@OfferItemID.toString()
@@ -1370,7 +1371,11 @@ class Lib_GettingDataFromOfferID {
 		offerItemID_INF	= offer.AddOfferItem.find() {
 			it.Service.PassengerRefs.toString().contains( 'INFANT' )
 		}.@OfferItemID.toString()
-		
+
+
+		logger.info offerItemID_ADT
+		logger.info offerItemID_CHD
+		logger.info offerItemID_INF
 		return [ offerItemID_ADT, offerItemID_CHD, offerItemID_INF ]
 	}
 
