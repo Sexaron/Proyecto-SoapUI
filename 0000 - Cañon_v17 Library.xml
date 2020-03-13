@@ -321,7 +321,7 @@ class Lib_GettingData {
 				isValid	= true		
 				offer.OfferItem[0].FareDetail.FareComponent.eachWithIndex() { fareComponent, index ->
 					segmentsRefs	= fareComponent.SegmentRefs.toString().split(' ')
-					if ( segmentsRefs.size() != ( nS[index].toInteger() - 1 ) ) {
+					if ( segmentsRefs.size() != ( nS[index].toInteger() + 1 ) ) {
 						isValid	= false 
 					}
 				}
@@ -651,7 +651,7 @@ class Lib_GettingOfferFromOrderReshop {
 				isValid	= true		
 				offer.AddOfferItem[0].FareDetail.FareComponent.eachWithIndex() { fareComponent, index ->
 					segmentsRefs	= fareComponent.SegmentRefs.toString().split(' ')
-					if ( segmentsRefs.size() != ( nS[index].toInteger() - 1 ) ) {
+					if ( segmentsRefs.size() != ( nS[index].toInteger() + 1 ) ) {
 						isValid	= false 
 					}
 				}
