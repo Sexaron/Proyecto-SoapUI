@@ -321,7 +321,7 @@ class Lib_GettingData {
 				isValid	= true		
 				offer.OfferItem[0].FareDetail.FareComponent.eachWithIndex() { fareComponent, index ->
 					segmentsRefs	= fareComponent.SegmentRefs.toString().split(' ')
-					if ( segmentsRefs.size() != nS[index].toInteger() ) {
+					if ( segmentsRefs.size() != ( nS[index].toInteger() - 1 ) ) {
 						isValid	= false 
 					}
 				}
@@ -617,6 +617,7 @@ context.setProperty( objName, new Lib_GettingData( testRunner, context, log) )]]
  * 		- getRandomOffer
  * 		- getOffer 
  * 		- getResponse
+ * 		- getCitiesLst
  */
  
 import groovy.json.JsonSlurper
@@ -650,7 +651,7 @@ class Lib_GettingOfferFromOrderReshop {
 				isValid	= true		
 				offer.AddOfferItem[0].FareDetail.FareComponent.eachWithIndex() { fareComponent, index ->
 					segmentsRefs	= fareComponent.SegmentRefs.toString().split(' ')
-					if ( segmentsRefs.size() != nS[index].toInteger() ) {
+					if ( segmentsRefs.size() != ( nS[index].toInteger() - 1 ) ) {
 						isValid	= false 
 					}
 				}
@@ -968,9 +969,12 @@ context.setProperty( objName, new Lib_GettingOfferFromOrderReshop( testRunner, c
  *		- getResponseIDFromOrderReshop
  *		- getPassengerReferences
  *		- getOfferItemsFromOrderReshop
+ *		- getOfferItemsToDelete
  *		- getLstPaxesFromReprice
  *		- getLstOrderItemsToDelete
+ *		- getLstOrderItemsToDelete
  *		- getNewPriceOfferFromReprice
+ *		- getOfferIDFromOrderReshop
  */
  
 import groovy.json.JsonSlurper
@@ -1377,6 +1381,32 @@ class Lib_GettingDataFromOfferID {
 		logger.info offerItemID_CHD
 		logger.info offerItemID_INF
 		return [ offerItemID_ADT, offerItemID_CHD, offerItemID_INF ]
+	}
+
+		//Se obtiene lista de offerItems a eliminar a partir del OrderReshop
+	def getOfferItemsToDelete ( rs, orderItemsToDelete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_Getting data from offer/getOfferItemsToDelete'
+
+		def offerItemsToDelete	= []
+		
+		orderItemsToDelete	= orderItemsToDelete.replace ( '['	, '' )
+										.replace ( ']'	, '' )
+										.replace (' '	, '' )
+															
+		orderItemsToDelete = orderItemsToDelete.split(',')
+		
+		orderItemsToDelete.each() { order ->
+			logger.info order
+			offerItemsToDelete	<< rs.ReshopOffers.ReshopOffer.DeleteOfferItem.find() { offer ->
+				offer.@OrderItemID.toString().equals( order )
+			}.@OfferItemID.toString()
+		}
+
+		offerItemsToDelete	= offerItemsToDelete.toString()	.replace ( '['	, '' )
+													.replace ( ']'	, '' )
+													.replace (' '	, '' )
+												
+		return offerItemsToDelete
 	}
 
 		//Se obtiene por separado las listas de los ADT, CHD e INF que se ven involucrados en el cambio
@@ -3469,6 +3499,7 @@ context.setProperty( objName, new LIB_OrderRetrieveXMLs ( testRunner, context, l
 	]]></script></con:config></con:testStep><con:testStep type="groovy" name="LIB_OrderReshop XML" id="50a4dcb7-f7fa-43e0-bbce-4638fedca120" disabled="true"><con:settings/><con:config><script><![CDATA[/*
  *	XML:
  *		- getReshop_XML
+ *		- getReshopToDelete_XML
  *		- getRouteSegmentLst
  *		- getOriDesAndDate
  *		- getOriDesXML
@@ -3479,6 +3510,7 @@ context.setProperty( objName, new LIB_OrderRetrieveXMLs ( testRunner, context, l
  *		- getDelete_XML
  *		- getDataLists_XML
  *		- getAssociatedID_XML
+ *		- getOrderItemsToDelete
  */
 
 import groovy.json.JsonSlurper
@@ -3603,6 +3635,22 @@ class LIB_OrderReshopXML {
 		}
 
 		def reshop_XML	= reshop_xml.replace( '[ORDERITEMS]', orderItems_XML )
+		
+		return reshop_XML
+	}
+
+		//Devuelve el XML del reshop con los items a eliminar
+	def getReshopToDelete_XML( orderItemsToDelete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getReshopToDelete_XML'
+
+		def reshop_XML		= ''
+		def orderItems_XML	= ''
+		
+		orderItemsToDelete.each() {
+			orderItems_XML	= orderItems_XML + orderItem_xml.replace( '[ORDERITEM]', it )
+		}
+
+		reshop_XML	= reshop_xml.replace( '[ORDERITEMS]', orderItems_XML )
 		
 		return reshop_XML
 	}
@@ -3955,6 +4003,26 @@ class LIB_OrderReshopXML {
 
 		return associatedID_XML
 	}
+
+		//Devuelve el AssociatedID con los offerItemsID de los pasajeros
+	def getOrderItemsToDelete ( rs, paxesToDelete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderReshop XML/getOrderItemsToDelete'
+
+		def orderItemsToDelete	= []
+		paxesToDelete			= paxesToDelete.split(',')
+
+		paxesToDelete.each() { pax ->
+			orderItemsToDelete	<< rs.Response.Order.OrderItems.OrderItem.find() {
+				it.Service[0].PassengerRef.toString().equals( pax.toString() )
+			}.@OrderItemID.toString()
+		}
+		
+		orderItemsToDelete.eachWithIndex() { order, i ->
+			assert order != '', "ERROR: No se ha encontrado orderItemID para el pasajero indicado número ${i+1}"
+		}
+
+		return orderItemsToDelete
+	}
 }
 
 final objName	= "cntx_ORXML"
@@ -3975,6 +4043,9 @@ context.setProperty( objName, new LIB_OrderReshopXML ( testRunner, context, log)
  *		- getQueryChanges_XML
  *		- getAcceptOffer_XML
  *		- getDeleteReprice_XML
+ *		- getDeleteSplit_XML
+ *		- getAcceptOfferSplit_XML
+ *		- getOrderServicingSplit_XML
  */
 
 import groovy.json.JsonSlurper
@@ -4205,6 +4276,24 @@ class LIB_OrderChangeXMLs {
 
 		lstPaxes.each() {
 			passengers_XML	= passengers_XML + passenger_xml.replace( '[PAX]', it.toString()	)
+		}
+
+		passengerList_XML	= passengerList_xml.replace( '[PASSENGERS]', passengers_XML	)
+		
+		return passengerList_XML
+	}
+
+		//Devuelve el XML del PassengerList para Split Delete
+	def getPassengerListSplit_XML( paxToDelete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getPassengerListSplit_XML'
+
+		def passengerList_XML	= ''
+		def passengers_XML		= ''
+		
+		paxToDelete	= paxToDelete.split(',')
+
+		paxToDelete.each() {
+			passengers_XML	= passengers_XML + passenger_xml.replace( '[PAX]', it	)
 		}
 
 		passengerList_XML	= passengerList_xml.replace( '[PASSENGERS]', passengers_XML	)
@@ -4444,6 +4533,65 @@ class LIB_OrderChangeXMLs {
 		deleteReprice_XML	= deleteReprice_xml.replace( '[ORDERITEMS]', orderItemsReprice_XML )
 		
 		return deleteReprice_XML
+	}
+
+		//Devuelve el Delete para la Query
+	def getDeleteSplit_XML ( offerItemsToDelete ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getDeleteSplit_XML'
+
+		def delete_XML		= ''
+		def orderItems_XML	= ''
+
+		offerItemsToDelete	= offerItemsToDelete.replace( '[', '')
+										.replace( ']', '')
+										.replace( ' ', '')
+
+		offerItemsToDelete	= offerItemsToDelete.split(',')
+
+		offerItemsToDelete.each() {
+			orderItems_XML	= orderItems_XML + orderItemsDelete_xml.replace( '[ORDERITEM]', it	)
+		}
+
+		delete_XML	= delete_xml.replace( '[ORDERITEMS]', orderItems_XML )
+		
+		return delete_XML
+	}
+
+		//Devuelve el AcceptOffer para eliminar pasajeros
+	def getAcceptOfferSplit_XML ( paxesToDelete, offerItemsToDelete, offerID, reponseID ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getAcceptOfferSplit_XML'
+
+		def acceptOffer_XML	= ''
+		def offerItems_XML	= ''
+		def offer_XML		= ''
+
+		paxesToDelete		= paxesToDelete.split(',')
+		offerItemsToDelete	= offerItemsToDelete.split(',')
+
+		paxesToDelete.eachWithIndex() { pax, i ->
+			offerItems_XML	= offerItems_XML + offerItems_xml	.replace( '[OFFERITEM]'	, offerItemsToDelete[i] 	)
+													.replace( '[PAX]'		, pax 				)
+		}
+
+		offer_XML		= offer_xml	.replace( '[OFFERID]'	, offerID 		)
+								.replace( '[RESPONSEID]'	, reponseID 		)
+								.replace( '[OFFERITEMS]'	, offerItems_XML	)
+
+		acceptOffer_XML= acceptOffer_xml.replace( '[OFFER]'	, offer_XML 		)
+		
+		return acceptOffer_XML
+	}
+
+		//Devuelve el OrderServicing para eliminar pasajeros
+	def getOrderServicingSplit_XML ( acceptOffer_XML, delete_XML ) {
+		logger.info ':: RUNNING -> //Libs/LIB_OrderChange XMLs/getOrderServicingSplit_XML'
+
+		def orderServicing_XML	= ''
+		
+		orderServicing_XML	= orderServicing_xml.replace( '[ACCEPTOFFER]'	, acceptOffer_XML 	)
+										.replace( '[DELETE]'		, delete_XML 		)
+		
+		return orderServicing_XML
 	}
 }
 
